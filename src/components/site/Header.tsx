@@ -1,13 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 import {
   Menu,
-  X,
   ChevronDown,
   ChevronRight,
-  type LucideIcon,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -23,8 +20,7 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { useNav, type ViewKey } from "@/store/nav";
-import { LOGO_URL, SITE } from "@/data/content";
-import { cn } from "@/lib/utils";
+import { LOGO_URL } from "@/data/content";
 
 function NavItem({
   label,

@@ -2,18 +2,24 @@
 
 import {
   ChevronLeft,
+  ChevronDown,
   Lightbulb,
   Telescope,
   Heart,
   Mail,
   Phone,
-  Image as ImageIcon,
   Newspaper,
   CheckCircle2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { ProgramCard } from "../ProgramCard";
 import { StatusBadge } from "../StatusCard";
 import { useNav } from "@/store/nav";
@@ -673,13 +679,6 @@ export function YhConnectPage() {
 }
 
 // small dropdown helper for the secondary nav
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { ChevronDown } from "lucide-react";
 
 function YhDropdown({
   label,

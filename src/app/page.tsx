@@ -27,7 +27,6 @@ import {
 } from "@/components/site/pages/AuthPages";
 import { useNav } from "@/store/nav";
 import { toast } from "sonner";
-import { LOGO_URL } from "@/data/content";
 
 function NotFoundPage() {
   const { navigate } = useNav();

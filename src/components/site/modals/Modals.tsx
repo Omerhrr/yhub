@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { Calendar as CalIcon, Clock, MapPin, Users, X } from "lucide-react";
+import { Calendar as CalIcon, Clock, MapPin, Users, CircleCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
   DialogContent,
@@ -21,7 +22,6 @@ import {
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { CircleCheck, ImageIcon } from "lucide-react";
 import { toast } from "sonner";
 import { useNav } from "@/store/nav";
 import {
@@ -606,7 +606,7 @@ export function EventDetailsModal() {
 }
 
 // Local Badge import (avoids circular dep risk)
-import { Badge } from "@/components/ui/badge";
+// (moved to top of file)
 
 export function ModalsHost() {
   return (

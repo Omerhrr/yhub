@@ -1,0 +1,856 @@
+     1→# Yahya Hub — Site Analysis & Clone Spec
+     2→
+     3→**Target site:** `https://yahyahub-bookings-n-products--yahyahub-e7643.us-east4.hosted.app/`
+     4→**Analysis date:** June 2026 (server time)
+     5→**Tooling used:** `agent-browser` (Playwright-based), full DOM snapshots, CSS-variable extraction, network inspection, screenshots (saved in `/home/z/my-project/screenshots/`).
+     6→
+     7→---
+     8→
+     9→## 1. Site Overview
+    10→
+    11→Yahya Hub is a **coworking-space / innovation-hub** marketing + booking platform. It lets visitors:
+    12→
+    13→- Browse **workspaces** and book them by the hour or day (calendar-based, with Paystack payment).
+    14→- Browse **programs** (tech bootcamps for adults, kids, school-leavers) and enroll (Paystack payment).
+    15→- Browse **events** (conferences, webinars, game nights) and book a spot (free or paid).
+    16→- Read about past programs and past events (with detailed write-ups in modals).
+    17→- View the **YH Connect** product — a separate sub-platform connecting clients with verified built-environment professionals (architects, engineers, artisans), with its own client/talent authentication, project posting, and dashboards.
+    18→- Access a hidden **admin login** (linked from the footer as a dot ".") at `/admin/login`.
+    19→
+    20→The site is in active use, contains real bookings data (Nigerian Naira prices, Africa/Lagos timezone), and includes a Paystack payment integration.
+    21→
+    22→---
+    23→
+    24→## 2. Tech Stack (confirmed from headers + network)
+    25→
+    26→| Layer | Technology |
+    27→|---|---|
+    28→| Framework | **Next.js 14.0.21** (App Router, RSC streaming — `x-nextjs-cache: HIT`, `vary: rsc, next-router-state-tree`) |
+    29→| Styling | **Tailwind CSS** (utility classes everywhere) + **shadcn/ui** components (Radix UI primitives: Dialog, DropdownMenu, Tabs, Calendar, Popover, Select, Combobox, Toast/Sonner) |
+    30→| Font | **Inter** loaded from `https://fonts.googleapis.com/css2?family=Inter&display=swap` (single weight 400 + Tailwind weight utilities) |
+    31→| Icons | **lucide-react** (inline SVG icons throughout) |
+    32→| Auth | **Firebase Authentication** (email/password — confirmed by `Firebase: Error (auth/invalid-credential)` on bad login) |
+    33→| Database | **Cloud Firestore** (project `yahyahub-e7643`, real-time Listen channel observed) |
+    34→| Storage | **Firebase Storage** — two buckets: `yahyahub-e7643` (logos, hero video, paystack logo, some workspace images) and `yahya-hub-backed` (older workspace images like `executive-office.jpg`) |
+    35→| Payments | **Paystack** (logo shown on enrollment/booking checkout steps) |
+    36→| Hosting | Google Cloud Run (`us-east4`), fronted by Firebase App Hosting (`x-fah-adapter: nextjs-14.0.21`) |
+    37→| Notifications | **Sonner** toasts (region labelled "Notifications (F8)") |
+    38→| Title (default) | `Yahya Hub | Coworking Space, Programs & Events` (YH Connect page overrides to `YH Connect | Connect with Verified Professionals - Yahya Hub`) |
+    39→
+    40→---
+    41→
+    42→## 3. Routes / Pages (full sitemap)
+    43→
+    44→### Public site (Yahya Hub main)
+    45→| Route | Type | Notes |
+    46→|---|---|---|
+    47→| `/` | Public | Home — hero, workspaces, programs, events |
+    48→| `/about` | Public | About page — mission/vision/offer/contact |
+    49→| `/programs` | Public | "Completed Programs" list |
+    50→| `/events` | Public | "Past Events" list with modals |
+    51→| `/blog` | Public | "Coming Soon" placeholder |
+    52→| `/privacy` | Public | Privacy Policy |
+    53→| `/terms` | Public | Terms of Service |
+    54→| `/products` | Public | Products index (lists YH Connect) |
+    55→| `/products/yh-connect` | Public | YH Connect landing page (has its own secondary nav) |
+    56→| `/#workspaces`, `/#programs`, `/#events` | Anchor | In-page navigation from header |
+    57→| `/admin/login` | Public (hidden) | Admin sign-in (linked from footer as ".") |
+    58→| `/client/login`, `/client/register` | Public | Client auth for YH Connect |
+    59→| `/talent/login`, `/talent/register` | Public | Talent auth for YH Connect (multi-step registration) |
+    60→| `/client/dashboard`, `/talent/dashboard`, `/admin/dashboard` | **Protected** | Redirect to respective `/login` when unauthenticated, with an "Access Denied" toast |
+    61→| `/client/signup` | 404 | (the sign-up *link* points to `/client/register`; `/client/signup` is a 404 page) |
+    62→| `/admin` | 404 | Not a route; only `/admin/login` + `/admin/dashboard` exist |
+    63→| Any unknown | 404 | Custom 404 page ("404 - Page Not Found") with the main header/footer |
+    64→
+    65→### External links (open in new context)
+    66→- Facebook: `https://www.facebook.com/share/1913yPdrYe/`
+    67→- Twitter/X: `https://x.com/YahyaHub`
+    68→- LinkedIn: `https://www.linkedin.com/company/yahyahub/posts`
+    69→- Email: `yahyahub6@gmail.com` · Phone: `07043925169`
+    70→
+    71→---
+    72→
+    73→## 4. Visual Design
+    74→
+    75→### Overall style
+    76→A clean, **minimalist / modern SaaS** look built on shadcn/ui + Tailwind. Lots of whitespace, soft borders, subtle shadows, rounded corners, and a confident navy primary color. Status cards on the hero use a translucent "glass" treatment (`bg-white backdrop-blur-sm`) over the background video.
+    77→
+    78→### Color palette (from CSS variables, HSL → hex)
+    79→
+    80→| Token | HSL | Hex | Usage |
+    81→|---|---|---|---|
+    82→| `--primary` | `206 98% 17%` | **`#013156`** | Navy — primary buttons, logo text, headings on hero, hover underline color `#013756` |
+    83→| `--secondary` | `196 83% 57%` | **`#36BCEC`** | Sky blue — icon accents (mail/phone icons in footer & about) |
+    84→| `--accent` | `46 100% 43%` | **`#DBA700`** | Amber/gold (used by shadcn defaults; not heavily used here) |
+    85→| `--background` | `0 0% 100%` | `#FFFFFF` | Page background |
+    86→| `--foreground` | `220 10% 15%` | `#22252A` | Body text |
+    87→| `--muted` | `220 15% 95%` | `#F0F2F4` | Workspaces section bg, footer contact box bg (`bg-muted/50`) |
+    88→| `--muted-foreground` | `220 10% 45%` | `#676F7E` | Secondary text, footer links |
+    89→| `--card` | `220 20% 100%` | `#FFFFFF` | Card backgrounds |
+    90→| `--card-foreground` | `220 10% 15%` | `#22252A` | Card text |
+    91→| `--border` | `220 15% 90%` | `#E2E4E9` | All card/input borders |
+    92→| `--input` | `220 15% 90%` | `#E2E4E9` | Input borders |
+    93→| `--ring` | `206 98% 17%` | `#013156` | Focus ring |
+    94→| `--destructive` | `0 84.2% 60.2%` | `#EF4444` | Errors / heart icon on About page |
+    95→| `--radius` | `0.5rem` | `8px` | Base radius |
+    96→| `--primary-foreground` | `210 20% 98%` | `#F9FAFB` | Text on primary buttons |
+    97→| `--popover` | `220 20% 100%` | `#FFFFFF` | Popover bg |
+    98→| `--sidebar-*` | various | — | Defined but unused (no sidebar in app) |
+    99→
+   100→**Status-badge colors (used directly as Tailwind classes, not tokens):**
+   101→
+   102→| Color | Hex | Usage |
+   103→|---|---|---|
+   104→| Green-500/20 bg, Green-600 text, Green-500/30 border | `#22C55E` / `#16A34A` | "Operational", "Ongoing", "Online", "Physical" |
+   105→| Yellow-500/20 bg, Yellow-600 text, Yellow-500/30 border | `#EAB308` / `#CA8A04` | "Upcoming", "hours" |
+   106→| Amber-50 bg, Amber-200 border, Amber-800 text | `#FFFBEB` / `#FDE68A` / `#92400E` | Timezone-mismatch warning box |
+   107→
+   108→**Chart palette** (defined, likely for admin dashboard charts): `--chart-1` `#F97316`, `--chart-2` `#29A38A`, `--chart-3` `#274658`, `--chart-4` `#E8B66B`, `--chart-5` `#F4A051`.
+   109→
+   110→**Star rating color:** `text-yellow-500` (`#EAB308`) with `fill-current`.
+   111→
+   112→### Typography
+   113→
+   114→- **Font family:** `Inter, sans-serif` (only weight 400 is loaded from Google Fonts; Tailwind's `font-bold` (700), `font-semibold` (600), `font-medium` (500) are applied via CSS — the browser synthesizes bold from the single loaded weight, OR Inter is also bundled by Next.js font optimization. Safest: load Inter at weights 400/500/600/700.)
+   115→- **Heading sizes (desktop):**
+   116→  - H1 hero: `text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight` → 36/48/60px, weight 700, tight tracking
+   117→  - H1 inner pages (About, Privacy, Terms, Blog, Products, Programs, Events): `text-4xl font-bold` (40px) — About uses `text-primary`
+   118→  - H2 section headings: `text-xl md:text-3xl font-bold` (Workspaces section) — 20/30px; or `text-2xl font-semibold` (About sub-headings)
+   119→  - H3 cards: `text-lg font-semibold` (18px) or `text-xl font-semibold`
+   120→  - Card titles (workspace/program/event): `text-xl font-semibold` (20px), `tracking-tight`
+   121→- **Body sizes:**
+   122→  - Hero paragraph: `text-base sm:text-lg` (16/18px)
+   123→  - About intro: `text-lg` (18px)
+   124→  - Card descriptions: `text-sm` (14px)
+   125→  - Footer/legal: `text-sm` (14px)
+   126→  - Micro text: `text-xs` (12px) — status badges, muted captions
+   127→- **Button text:** `text-sm font-medium` (14px / 500)
+   128→- **Font weights in use:** 400 (body), 500 (buttons/links/medium), 600 (status badges), 700 (headings/bold)
+   129→
+   130→### Spacing / Layout
+   131→
+   132→- Container: `container mx-auto px-4` (Tailwind default container, ~1280px max with 16px gutters)
+   133→- Section padding: `py-16` (64px vertical) for major sections; `py-8` (32px) for footer
+   134→- Card padding: `p-6` (24px)
+   135→- Grid gaps: `gap-4` (16px) for status cards, `gap-8` (32px) for workspace/program/event grids
+   136→- Hero grid: `lg:grid-cols-2 gap-12 items-center`
+   137→- Workspaces/Programs/Events grids: `grid-cols-1 md:grid-cols-2 lg:grid-cols-3`
+   138→
+   139→### Border radius
+   140→
+   141→- Base `--radius`: `0.5rem` = **8px** (`rounded-lg` on cards)
+   142→- Buttons: `rounded-md` (6px)
+   143→- Badges/pills: `rounded-full` (9999px)
+   144→- Inputs: `rounded-md` (6px)
+   145→
+   146→### Shadows
+   147→
+   148→- Cards: `shadow-sm` (`0 1px 2px 0 rgba(0,0,0,0.05)`)
+   149→- Modals/dialogs: `shadow-lg` (`0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -4px rgba(0,0,0,0.1)`)
+   150→- Hero status cards: `shadow-sm` + `border-white/20` + `bg-white backdrop-blur-sm`
+   151→
+   152→### Borders
+   153→
+   154→- Default border color: `#E2E4E9` (`border`)
+   155→- Border width: `1px` on cards, inputs, dividers
+   156→- Divider inside cards: `h-[1px] w-full bg-border`
+   157→
+   158→### Animations / transitions
+   159→
+   160→- `transition-colors` on links/buttons
+   161→- Radix dialog animations: `fade-in-0`, `zoom-in-95`, `slide-in-from-*` (200ms duration)
+   162→- Chevron icon rotates 180° when dropdown opens: `group-data-[state=open]:rotate-180 transition-transform duration-200`
+   163→
+   164→---
+   165→
+   166→## 5. Global Layout & Reusable Components
+   167→
+   168→### 5.1 Site Header (top nav) — `Header` component
+   169→- **Container:** sticky-ish top bar with `flex items-center justify-between` (logo left, nav right)
+   170→- **Logo:** 40×40 SVG (`logo.svg`) + wordmark "Yahya Hub" in `text-xl font-bold text-primary`
+   171→- **Desktop nav (`hidden md:flex`):** About Us · Workspaces · Programs · Events · **Products** (dropdown)
+   172→  - Link styling: `font-medium text-gray-700 hover:text-[#013756] hover:underline hover:underline-offset-4`
+   173→  - "Products" is a Radix DropdownMenu button with a chevron-down icon; menu item: "YH Connect" → `/products/yh-connect`
+   174→- **Mobile:** hamburger button (lucide `menu`/`x` icon) opens a Radix Sheet/drawer containing the same nav as a `<ul>` list
+   175→
+   176→### 5.2 Site Footer — `Footer` component (present on all main pages)
+   177→Four-column grid (`md:grid-cols-4`), border-top, white bg:
+   178→
+   179→1. **Contact** column
+   180→   - Heading "Contact" (`font-bold`)
+   181→   - Box: `rounded-lg border bg-muted/50 p-4` containing:
+   182→     - Mail icon (`text-secondary`) + `yahyahub6@gmail.com` (`mailto:`)
+   183→     - Phone icon (`text-secondary`) + `07043925169` (`tel:`)
+   184→2. **Community** column
+   185→   - Heading + `<ul>`: Programs (`/#programs`), Events (`/#events`), Blog (`/blog`)
+   186→3. **Social** column
+   187→   - Heading + `<ul>`: Facebook, Twitter, LinkedIn (external)
+   188→4. **Legal** column
+   189→   - Heading + `<ul>`: Privacy (`/privacy`), Terms (`/terms`), **"."** (`/admin/login` — hidden link)
+   190→
+   191→Bottom bar: `mt-8 border-t pt-8 text-center text-muted-foreground` with `© 2026 Yahya Hub. All rights reserved.`
+   192→
+   193→### 5.3 Reusable UI primitives (shadcn/ui)
+   194→Detected in use:
+   195→- `Button` (variants: default/primary, outline, ghost; sizes: default, sm, lg, icon)
+   196→- `Card` (`rounded-lg border bg-card shadow-sm` with `CardHeader`, `CardContent`, `CardFooter`)
+   197→- `Badge` (pill: `rounded-full border px-2.5 py-0.5 text-xs font-semibold`)
+   198→- `Input` (textbox, password with eye toggle button)
+   199→- `Label`
+   200→- `Select` / `Combobox` (Radix)
+   201→- `Dialog` (modal with overlay, centered, `max-w-lg`)
+   202→- `DropdownMenu` (Products, Login, Sign Up)
+   203→- `Tabs` (Daily / Hourly booking tabs)
+   204→- `Calendar` (date picker — Radix-style month grid)
+   205→- `Popover` (All Amenities, calendar trigger)
+   206→- `Checkbox` (terms agreement)
+   207→- `Progress` (talent registration stepper)
+   208→- `Toaster` / `toast()` (Sonner — bottom-right, dismissible, `role=status`)
+   209→- `Separator` (`h-[1px] w-full bg-border`)
+   210→
+   211→### 5.4 Other shared components
+   212→- `WorkspaceCard`, `ProgramCard`, `EventCard` (all extend `Card`)
+   213→- `BookingModal` (multi-step: calendar → review → Paystack)
+   214→- `EnrollModal` (multi-step: contact info → details + Paystack)
+   215→- `EventDetailsModal` (single-step modal with full write-up)
+   216→- `AmenitiesModal` (lists all amenities with circle-check icons)
+   217→- `StatusBadge` (variants: operational/ongoing = green, upcoming = yellow)
+   218→- `StarRating` (5 lucide `Star` icons with `fill-current`, text-yellow-500)
+   219→- `PageHero` / `PageHeader` (Back link + H1 + subtitle — used on Programs/Events pages)
+   220→- `SecondaryNav` (YH Connect only — Home/Login/Sign Up)
+   221→
+   222→---
+   223→
+   224→## 6. Page-by-Page Documentation
+   225→
+   226→### 6.1 Home page (`/`)
+   227→
+   228→**Hero section** (full-bleed, has a background `<video>` with `firebasestorage.../hero/video/yahya_hub_commercial.mp4`):
+   229→- Dark navy overlay gradient over the video (`bg-primary/70`-style)
+   230→- 2-column grid on desktop (text left, status cards right); single column on mobile (status cards become a 4-button carousel)
+   231→- **Left column:**
+   232→  - H1: "Welcome to Yahya Hub"
+   233→  - Paragraph: "A vibrant space for ideas, creativity, and collaboration. We offer coworking spaces, run skill-building programs, and host events that inspire innovation across every field."
+   234→  - Two CTA buttons:
+   235→    - **"Explore Workspaces"** (primary navy, `h-11 px-8`, → `/#workspaces`)
+   236→    - **"Our Programs"** (outline, `border-white text-white hover:bg-white hover:text-black`, → `/#programs`)
+   237→- **Right column — 4 status cards** (`bg-white backdrop-blur-sm border-white/20`), each with:
+   238→  1. **Network Status** — lucide `signal` icon, green "Operational" badge, "99.0% uptime" (bold), "Starlink connection active"
+   239→  2. **Power Systems** — lucide `zap` icon, green "Operational" badge, "100% capacity", "Backup solar ready"
+   240→  3. **Climate Control** — lucide `thermometer` icon, green "Operational" badge, "26°C average", "Optimal temperature maintained"
+   241→  4. **Workspace** — lucide `briefcase-business` icon, **yellow "hours"** badge, "10 hours to close", "Open 9:00 AM - 8:00 PM"
+   242→
+   243→**Workspaces section** (`#workspaces`, `bg-muted py-16`):
+   244→- H2 "Workspaces" (`mb-8 text-xl md:text-3xl font-bold`)
+   245→- Grid of **7 workspace cards** (`grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8`). Each card:
+   246→  - **Header row:** title (`text-xl font-semibold`) on left + small "View Space" outline button (lucide `image` icon) on right
+   247→  - Description paragraph (`text-sm`)
+   248→  - **Rating row:** 5 yellow stars + numeric rating + "(N reviews)"
+   249→  - **Amenities row:** icons + labels (e.g., `armchair` icon + "50 Chair", `desk` icon + "6 Desk"). If >2 amenities, a "+N more" button (text-primary) opens an "All Amenities" modal listing every amenity with a `circle-check` icon.
+   250→  - **Pricing row:** "₦X,XXX /hour" and "₦X,XXX /day" (large bold numbers)
+   251→  - **CTA button:** "Check Availability" (primary, full-width-ish) — disabled when booking not allowed (e.g., Office of One is disabled)
+   252→
+   253→  The 7 workspaces are:
+   254→
+   255→  | # | Name | Description | Rating | Amenities | /hour | /day |
+   256→  |---|---|---|---|---|---|---|
+   257→  | 1 | Program/ Event space | A space of 50 chairs suitable for an event, webinar or workshop | 4.5 (10 reviews) | 50 Chair, 6 Desk, +2 more | ₦20,000 | ₦120,000 |
+   258→  | 2 | workspace | A dynamic, shared workspace designed for networking, collaboration, and spontaneous creativity. | 4.6 (150 reviews) | 20 Executive Desk | ₦333 | ₦3,000 |
+   259→  | 3 | Office of One | A compact, private office perfect for solo entrepreneurs and freelancers seeking focus and productivity. | 4.8 (75 reviews) | Executive Desk | ₦1,000 | ₦10,000 |
+   260→  | 4 | Office of Two | A private office designed for two, ideal for startups, small teams, or collaborative partners. | 4.9 (62 reviews) | 2 Executive Desk, Single Couches | ₦1,000 | ₦10,000 |
+   261→  | 5 | Office of Three | A collaborative workspace for a team of three, offering a blend of privacy and open communication. | 4.7 (45 reviews) | 3 Executive Desk, Double Couch | ₦1,000 | ₦10,000 |
+   262→  | 6 | Executive Office | A premium, spacious office for leaders, featuring top-tier amenities and a commanding view. | 4.5 (30 reviews) | Executive Desk, 2 Single Couches, +2 more | ₦1,000 | ₦10,000 |
+   263→  | 7 | Conference Room | A fully-equipped room for meetings, presentations, and workshops, designed for professional impact. | 4.9 (90 reviews) | 10 Executive Desk, Smart TV | ₦8,000 | ₦72,000 |
+   264→
+   265→  *Note:* The booking calendar **requires the browser timezone to be Africa/Lagos**. Visitors in any other timezone see a "Timezone Mismatch" card instead of the booking UI. (I bypassed this with an init script overriding `Intl.DateTimeFormat` to capture the real card content — see screenshot `22-home-with-workspaces.png`.)
+   266→
+   267→**Programs section** (`#programs`):
+   268→- H2 "Programs" + "Completed" link (`/programs`) with chevron-right icon
+   269→- 3 program cards (each with title + "Upcoming" yellow badge, description, two metadata rows with `users` icon + program-name + `clock` icon + duration, divider, price `text-xl font-bold` + "Enroll Now" primary button).
+   270→
+   271→  | Name | Status | Description | Tag | Duration | Price |
+   272→  |---|---|---|---|---|---|
+   273→  | Adult Classes | Upcoming | Data Analysis/Data Science, UI/UX, Cybersecurity, AI Automation, Software Engineering. 2 months, 3 days a week | Adult Classes | 2 months | ₦100,000 |
+   274→  | Kids Program | Upcoming | Scratch & Blockly, Graphics Design, Web Development, 3D CAD, Robotics 5 weeks, Monday – Wednesday, 10am – 1pm | Kids Program | 1 month | ₦50,000 |
+   275→  | Highschool Leavers | Upcoming | Python Programming. 2 months, 3 days a week | Highschool Leavers | 2 months | ₦100,000 |
+   276→
+   277→**Events section** (`#events`):
+   278→- H2 "Events" + "Past" link (`/events`) with chevron-right icon
+   279→- 2 event cards (title + status badge, description, 3 metadata rows: `calendar` icon + date, `clock` icon + time, `map-pin` icon + location, divider, price `text-lg font-bold` + button).
+   280→
+   281→  | Title | Status | Description | Date | Time | Location | Price | Button |
+   282→  |---|---|---|---|---|---|---|---|
+   283→  | Annual Tech Conference | Ongoing (green) | Join us for our biggest event of the year, featuring talks from industry leaders, networking opportunities, and workshops. | Nov 21, 2026 | 10:00 AM - 01:00 PM | Yahya Hub | ₦1,200 | "Ongoing" (disabled) |
+   284→  | Annual Tech Conference | Upcoming (yellow) | (same description) | Oct 26, 2025 | 10:00 AM - 01:00 PM | Yahya Hub | Free | "Book a Spot" |
+   285→
+   286→**Footer** (see §5.2).
+   287→
+   288→### 6.2 About page (`/about`)
+   289→Single centered column, `max-w-4xl mx-auto space-y-8`:
+   290→- H1 "About Yahya Hub" (`text-4xl font-bold text-primary`)
+   291→- Subtitle: "Fostering Innovation, Collaboration, and Growth in the Heart of the Community." (`text-lg`)
+   292→- **"Our Mission"** — H2 with lucide `lightbulb` icon (`text-2xl font-semibold flex items-center gap-3`) + mission paragraph
+   293→- **"Our Vision"** — H2 with lucide `telescope` icon + vision paragraph
+   294→- **"What We Offer"** — H2 + bulleted list (`list-disc list-inside`), each item with a `<strong>` lead-in:
+   295→  - "**Flexible Workspaces:** Modern, fully-equipped coworking spaces designed to inspire productivity and collaboration, from single desks to private offices."
+   296→  - "**Expert-Led Programs:** Cutting-edge tech bootcamps and workshops led by industry experts to help you acquire in-demand skills and accelerate your career."
+   297→  - "**Inspiring Events:** A vibrant calendar of networking events, conferences, and meetups that connect you with leaders, investors, and peers."
+   298→- **"Get In Touch"** — H2 + flex row with mail icon + `yahyahub6@gmail.com` and phone icon + `07043925169`
+   299→- **"Join Our Community"** — centered, lucide `heart` icon (`text-destructive`, `h-10 w-10`) above H2 (`text-primary`) + paragraph: "Whether you're looking for a place to work, a skill to learn, or a network to grow with, you have a home at Yahya Hub. Become a part of our story today."
+   300→
+   301→### 6.3 Programs page (`/programs`) — "Completed Programs"
+   302→- Back link (chevron-left + "Back") at top-left
+   303→- H1 "Completed Programs"
+   304→- Subtitle: "A look back at our previously offered programs and cohorts."
+   305→- 4 completed-program cards (same shape as home program cards but with "Completed" green badge and a cohort label + "0 seconds"/"7 days" duration):
+   306→  - Geographical Information System (GIS) — Cohort 3 — 0 seconds — ₦0
+   307→  - Geographical Information System (GIS) — Cohort 2 — 7 days — ₦0
+   308→  - Geographical Information System (GIS) — Cohort 1 — 7 days — ₦2,000
+   309→  - UX Workshop — Workshop — 0 seconds — ₦0
+   310→  - Description for GIS: "Gain practical skills in spatial data analysis, mapping, and geospatial technologies for real-world applications."
+   311→  - Description for UX Workshop: "Breaking into Ux Design in Nigeria Learn how to Start, Grow and Thrive"
+   312→
+   313→### 6.4 Events page (`/events`) — "Past Events"
+   314→- Sub-header bar: "Back to Home" link (chevron-left) on left, H1 "Past Events" + subtitle "A look back at the gatherings, workshops, and conversations that have shaped Yahya Hub." on right
+   315→- 7 past event cards. Each card has: category badge (top-left, e.g., "Public Webinar", "Community Tournament", "Professional Conference", "Youth Training", "Entrepreneurial Mixer", "Community Event", "Webinar"), location-type badge (top-right, e.g., "Online" or "Physical"), optional "MOST RECENT" tag on the very first card, title (clickable, opens modal), description, audience (lucide `users` icon + text), date (lucide `calendar`), location (lucide `map-pin`), "Read More" / "Read Full Write-up" button, and an "Instagram Post"/"Instagram" link.
+   316→- The first card ("Building Green 101…") has a "Read Full Write-up" button (different from "Read More" on others) and an "Instagram Post" link.
+   317→
+   318→  The 7 past events:
+   319→
+   320→  | Title | Category | Mode | Date | Location | Audience |
+   321→  |---|---|---|---|---|---|
+   322→  | Building Green 101: Engineering, Architecture and Global Opportunities | Public Webinar | Online | May 23, 2026 | Google Meet | Civil Engineers, Architects, Urban Planners, Students, Built-Environment Professionals |
+   323→  | Games Night May Edition — Settle The Score | Community Tournament | Physical | May 22, 2026 | Yahya Hub | Gamers, Young Professionals, Students |
+   324→  | AI in Architecture — Yahya Hub x NIA | Professional Conference | Physical | May 21, 2026 | Yahya Hub | NIA Members, Architects, Built-Environment Professionals |
+   325→  | Kids Spring Break Tech Bootcamp | Youth Training | Physical | Apr 15, 2026 | Yahya Hub | Children and Young Learners |
+   326→  | From Ideas to Impact: Building Resilient Founders | Entrepreneurial Mixer | Physical | Apr 10, 2026 | Yahya Hub | Startup Founders, Entrepreneurs, Grant-Seekers |
+   327→  | Community Games Night | Community Event | Physical | Apr 5, 2026 | Yahya Hub | Gen Z, Young Professionals, Students |
+   328→  | Beyond the Hype: AI Security from the Ground Up | Webinar | Online | Apr 1, 2026 | Yahya Hub | Tech Professionals, Developers, Founders |
+   329→
+   330→  Each "Read More" opens a modal with: category + mode badges, title, subtitle, audience row, **a long-form write-up paragraph** (the meaty recap text), date/time/location rows, **"FEE"** label + amount (₦0 for all), and a "View on Instagram" link.
+   331→
+   332→  **Sample modal write-up (Games Night May Edition):**
+   333→  > "May's Games Night was a different beast entirely. Where April was a warm introduction, May delivered on the promise: a proper tournament. Two PS5 setups. Two separate brackets. FC26 on one screen, Mortal Kombat on the other. Sixteen tournament slots. Real prize money built from entry fees. Alongside the brackets, the room played Kahoot, with questions on Nigerian pop culture, football, and gaming, and Werewolf/Mafia for the non-tournament crowd. Two champions were crowned before the afternoon was done, and the room that came in competitive left feeling like a community. The tagline said it best: Two Arenas. Two Champions."
+   334→
+   335→  **Sample modal write-up (Building Green 101 webinar):**
+   336→  > "Most built-environment professionals in Nigeria have heard the term 'green building.' Very few have had a clear, structured explanation of what it actually means and where they fit in it. Building Green 101 changed that. The webinar opened with a full anchor-led overview of the green building landscape. Its five key pillars, its areas of specialisation, and why the opportunity is significant for Nigerian professionals right now. Then the speaker took over. Adams Balade Abubakar, a COREN-certified civil engineer, Corporate Member of the Nigerian Society of Engineers, and PhD Candidate at the University of Ottawa, joined live to break down his field: sustainable structural materials, carbon reduction in construction, and his research into cement-free binders."
+   337→
+   338→### 6.5 Blog page (`/blog`)
+   339→- Centered: a large icon (lucide — appears as `image`/`newspaper`), H1 "Coming Soon!", paragraph "Our team is working hard to bring you insightful articles and updates. Please check back later."
+   340→
+   341→### 6.6 Privacy Policy (`/privacy`)
+   342→- H1 "Privacy Policy", "Last updated: June 16, 2026"
+   343→- 5 numbered H2 sections: 1. Introduction · 2. Information We Collect · 3. How We Use Your Information (with 5-bullet list) · 4. Disclosure of Your Information · 5. Contact Us
+   344→- Contact block with mail + phone icons/links.
+   345→
+   346→### 6.7 Terms of Service (`/terms`)
+   347→- H1 "Terms of Service", "Last updated: June 16, 2026"
+   348→- 5 numbered H2 sections: 1. Acceptance of Terms · 2. Service Provision · 3. User Conduct · 4. Limitation of Liability · 5. Contact Us
+   349→- Same contact block.
+   350→
+   351→### 6.8 Products index (`/products`)
+   352→- H1 "Products", subtitle "Discover the innovative products built at Yahya Hub."
+   353→- One product card: H2 "YH Connect", subtitle "A premier platform for connecting clients with verified professionals in the built environment.", "Learn More" link → `/products/yh-connect`.
+   354→
+   355→### 6.9 YH Connect landing (`/products/yh-connect`)
+   356→
+   357→**Secondary nav** (below the main header): a thin `border-b` bar, height 14, right-aligned, with three controls:
+   358→- **"Home"** button (wraps an `<a href="/products">`)
+   359→- **"Login"** dropdown (chevron-down) → menu items "As a Client" (`/client/login`) and "As a Talent" (`/talent/login`)
+   360→- **"Sign Up"** dropdown (chevron-down) → menu items "As a Client" (`/client/register`) and "As a Talent" (`/talent/register`)
+   361→
+   362→**Hero:** H1 "Build with Confidence." + paragraph "YH Connect is the premier platform for connecting clients with verified professionals in the built environment. Find the right talent, manage your project, and achieve outstanding results, all in one place." + two CTA links: "Post a Project" (`/client/register`) and "Join as Talent" (`/talent/register`).
+   363→
+   364→**"How It Works"** section: H2 + subtitle "A simple, transparent process for everyone." + 3-step row:
+   365→1. "1. Find or Post" — "Clients can post project details for bids or browse our directory of verified professionals. Talents can find opportunities that match their skills."
+   366→2. "2. Connect & Collaborate" — "Use our secure platform to communicate, agree on terms, and manage your project from kickoff to completion."
+   367→3. "3. Get It Done" — "Complete your project with confidence. Secure payments and a mutual rating system ensure accountability and quality."
+   368→
+   369→**"Why Choose YH Connect?"** section: H2 + subtitle "Everything you need for a successful project." + 4 feature blocks:
+   370→- **Verified Professionals** — "Every talent on our platform is carefully vetted for skill, experience, and professionalism, giving you peace of mind."
+   371→- **Secure Payments** — "Our integrated payment system with escrow options ensures that funds are only released when milestones are met."
+   372→- **Flexible Project Management** — "Choose to manage your project directly or hand over the reins to our experienced in-house project managers."
+   373→- **Direct Communication** — "Use our built-in messaging to communicate seamlessly with your hired talent from start to finish."
+   374→
+   375→**Two side-by-side panels:**
+   376→- **For Clients** — "Tired of unreliable contractors and project delays? Get access to a curated network of professionals. Post your project, receive competitive bids, and hire with confidence." + 3 bulleted features (each with check icon):
+   377→  - "Access to vetted architects, engineers, & artisans."
+   378→  - "Option for full project management by Yahya Hub."
+   379→  - "Transparent process with secure escrow payments."
+   380→  - CTA: "Get Started & Post Your Project"
+   381→- **For Talents** — "Stop searching for your next gig. Join a community where your skills are valued. Get verified, access exclusive projects, and build your professional reputation." + 3 bullets:
+   382→  - "Steady stream of project opportunities."
+   383→  - "Build your portfolio and professional brand."
+   384→  - "Fair compensation with secure and timely payments."
+   385→  - CTA: "Apply to Join Our Network"
+   386→
+   387→**"Trusted by the Best"** section: H2 + subtitle "See what our users are saying about YH Connect." + 3 testimonial cards, each with 5 yellow stars + blockquote + avatar image + name + role:
+   388→1. ⭐⭐⭐⭐⭐ "Finding a reliable architect was a nightmare until I found YH Connect. The whole process was seamless and professional." — **Amina Jibril**, Homeowner & Client
+   389→2. ⭐⭐⭐⭐⭐ "As a freelance engineer, YH Connect has been a game-changer. I get consistent, high-quality projects without the hassle of marketing." — **David Okon**, Structural Engineer
+   390→3. ⭐⭐⭐⭐⭐ "The project management handover feature is brilliant. Yahya Hub managed our entire office renovation flawlessly." — **Fatima Bello**, Startup Founder
+   391→
+   392→---
+   393→
+   394→## 7. Authentication Flows
+   395→
+   396→The site has **three distinct auth systems** (all Firebase email/password, all with the same visual language):
+   397→
+   398→### 7.1 Admin login (`/admin/login`)
+   399→Standalone centered card (no main header/footer — just the logo at top):
+   400→- Logo image (clickable → home)
+   401→- Heading "Sign in to your account"
+   402→- Form: Email Address (textbox, required) · Password (textbox with eye-show/hide toggle button, required) · "Login" primary button
+   403→- "Back to Home" link (chevron-left)
+   404→- On failure: red Sonner toast "Login Failed" with message "Firebase: Error (auth/invalid-credential)."
+   405→- On success: redirects to `/admin/dashboard` (protected — I could not access content, but the route exists)
+   406→
+   407→### 7.2 Client login (`/client/login`) & register (`/client/register`)
+   408→**Login** (`/client/login`) — same standalone-card layout:
+   409→- Heading "Client Login"
+   410→- Subtitle "Access your dashboard."
+   411→- Email + Password + "Login" + "Don't have an account? [Sign up]" (`/client/register`) + "Back to Home"
+   412→
+   413→**Register** (`/client/register`) — standalone card:
+   414→- Heading "Create a Client Account"
+   415→- Subtitle "Join to find and manage top talent for your projects."
+   416→- Fields:
+   417→  - **Client Type** (Select dropdown): options `Individual` (default), `Company`, `Government Agency`
+   418→  - **Full Name** (placeholder "e.g., Bola John Bello")
+   419→  - **Email Address** (placeholder "Your email")
+   420→  - **Phone Number** (placeholder "e.g., 08012345678")
+   421→  - **Password** (placeholder "Your password", with eye toggle)
+   422→  - **Confirm Password** (placeholder "Your password again", with eye toggle)
+   423→  - **Address** (placeholder "Your address")
+   424→  - Checkbox "Agree to Terms and Conditions" + inline text "By checking this box, you agree to our [Terms of Service]."
+   425→  - "Create Account" primary button
+   426→- Footer: "Already have an account? [Log in]" + "Back to home"
+   427→
+   428→### 7.3 Talent login (`/talent/login`) & register (`/talent/register`)
+   429→**Login** (`/talent/login`) — same standalone card:
+   430→- Heading "Talent Login"
+   431→- Subtitle "Access your talent dashboard."
+   432→- Email + Password + "Login" + "Don't have an account? [Sign up]" + "Back to home"
+   433→
+   434→**Register** (`/talent/register`) — **multi-step** (Step 1 of N, with a Progress bar at top):
+   435→- Heading "Join Our Professional Network"
+   436→- Subtitle "Create your talent profile to get access to exclusive projects."
+   437→- `<Progress>` bar
+   438→- **Step 1: Account Information**
+   439→  - Full Name (placeholder "Your full name")
+   440→  - Phone Number (placeholder "Your phone number")
+   441→  - Email Address (placeholder "Your email address")
+   442→  - Password (placeholder "Choose password", eye toggle)
+   443→  - "Next" primary button
+   444→- Footer: "Already have an account? [Log in]" + "Back to home"
+   445→- (Subsequent steps were not reachable without submitting step 1, but presumably continue with professional info, portfolio, verification, etc.)
+   446→
+   447→---
+   448→
+   449→## 8. Interactive Flows (modals, bookings, payments)
+   450→
+   451→### 8.1 Workspace booking — "Check Availability" button
+   452→Opens **"Schedule Your Visit"** dialog with:
+   453→- Title "Schedule Your Visit"
+   454→- Subtitle "Book {workspace_name}. Choose a daily or hourly rate."
+   455→- **Tabs:** `Daily` (default) | `Hourly`
+   456→- **Daily tab:** a month-calendar (Radix Calendar). Past dates and today-before are disabled. Past-month cell shows trailing days greyed. Navigation: "Go to previous month" (disabled if at current month) and "Go to next month" buttons. Below the calendar: selected price (e.g., "₦120,000"), duration ("1 day"), and a row of `[Clear]` `[Checkout]` buttons (both disabled until a date is selected).
+   457→- **Hourly tab:** three Select dropdowns (`Year`, `Month`, `Day`) followed by a vertical list of hour-slot buttons from `09:00` through `20:00` (each disabled if already booked). Same Clear/Checkout row.
+   458→- **Checkout button** → opens a second dialog "Review Your Booking":
+   459→  - Title "Review Your Booking"
+   460→  - Subtitle "Review your details for {workspace_name} before payment."
+   461→  - Summary: price, duration, selected date(s)
+   462→  - A remove/clear icon button
+   463→  - Form: Name · Phone · Email · **"Reason for booking"** select (options: `Private Meeting`, `Seminar`, `Workshop`, `Events`)
+   464→  - Paystack logo image (the actual payment brand mark)
+   465→  - `[Back]` `[Pay Now]` buttons
+   466→
+   467→### 8.2 Workspace "View Space" button
+   468→Opens a simple image dialog with just: H2 = workspace name, the workspace photo, and a "Close" button. (No carousel/gallery UI was observed — single image per workspace.)
+   469→
+   470→### 8.3 Workspace "+N more" amenities button
+   471→Opens **"All Amenities"** modal: grid of all amenities, each with a `circle-check` lucide icon + label (e.g., "50 Chair", "6 Desk", "Projector", "Whiteboard").
+   472→
+   473→### 8.4 Program "Enroll Now" button
+   474→Opens **"Enroll in {Program Name}"** dialog. **Two-step flow:**
+   475→
+   476→**Step 1** — "Let's get to know you! Enter your contact information":
+   477→- Program name + price + duration display
+   478→- Form fields: Full Name · Email · Phone Number
+   479→- "Next" primary button
+   480→
+   481→**Step 2** — "Tell us more about yourself & complete your payment":
+   482→- Program name + price + duration display
+   483→- Form fields: **Gender** (Select dropdown: `Male` / `Female`) · **Educational Level** (free-text)
+   484→- Paystack logo image
+   485→- `[Back]` `[Pay Now]` buttons
+   486→
+   487→### 8.5 Event "Book a Spot" button
+   488→Opens **"Book a Spot for {Event Name}"** dialog (single step for free events):
+   489→- Subtitle "Fill in your details to reserve your place at this event."
+   490→- Price display (e.g., "Free") + event category (e.g., "Conference")
+   491→- Form fields: Full Name · **Gender** (Select: Male/Female) · Email · Phone Number
+   492→- `[Cancel]` `[Register Free]` buttons (for free events)
+   493→
+   494→### 8.6 Event card / "Read More" — past events
+   495→Clicking the event title or "Read More" button on a past-event card opens the **Event Details Modal** (see §6.4 for content shape).
+   496→
+   497→### 8.7 Mobile menu
+   498→Hamburger button toggles a Radix Sheet (slides in from the side) containing the same nav as a `<ul>` with `<li>` items.
+   499→
+   500→### 8.8 Notifications
+   501→Sonner toaster, bottom-right. Triggers observed:
+   502→- "Login Failed" — "Firebase: Error (auth/invalid-credential)." (red/error variant)
+   503→- "Access Denied" — "You do not have permission to access this page." (when hitting a protected route while logged out)
+   504→- (Likely also success toasts on booking/enrollment/payment — not triggered during exploration)
+   505→
+   506→Pressing **F8** opens/focuses the notifications region (Sonner shortcut).
+   507→
+   508→---
+   509→
+   510→## 9. Data Structures (inferred)
+   511→
+   512→### `Workspace`
+   513→```ts
+   514→{
+   515→  id: string
+   516→  name: string                    // "Program/ Event space", "workspace", "Office of One"...
+   517→  description: string
+   518→  type: string                    // "workspace" or "Program/ Event space"
+   519→  rating: number                  // 4.5, 4.6, 4.8...
+   520→  reviewCount: number             // 10, 150, 75...
+   521→  amenities: Array<{ icon: string, label: string }>   // e.g. [{icon:'armchair', label:'50 Chair'}, ...]
+   522→                                        // icons are lucide names: armchair, desk, armchair, sofa, tv...
+   523→  hourlyRate: number              // Naira
+   524→  dailyRate: number               // Naira
+   525→  imageUrl: string                // Firebase Storage URL
+   526→  bookingEnabled: boolean         // false → "Check Availability" disabled (Office of One)
+   527→}
+   528→```
+   529→
+   530→### `Program`
+   531→```ts
+   532→{
+   533→  id: string
+   534→  name: string                    // "Adult Classes", "Kids Program", "Highschool Leavers"
+   535→  description: string
+   536→  category: string                // displayed as second metadata (== name here)
+   537→  duration: string                // "2 months", "1 month"
+   538→  price: number                   // Naira; 0 = Free
+   539→  status: 'upcoming' | 'completed'
+   540→  cohort?: string                 // "Cohort 1", "Cohort 2"... (for completed)
+   541→  type?: string                   // "Workshop"
+   542→  enrollable: boolean             // true on home (upcoming), false on /programs (completed)
+   543→}
+   544→```
+   545→
+   546→### `Event`
+   547→```ts
+   548→{
+   549→  id: string
+   550→  title: string
+   551→  description: string
+   552→  longWriteUp?: string            // only on past events
+   553→  category: string                // "Public Webinar", "Community Tournament", "Professional Conference",
+   554→                                  // "Youth Training", "Entrepreneurial Mixer", "Community Event", "Webinar"
+   555→  mode: 'Online' | 'Physical'
+   556→  isMostRecent?: boolean
+   557→  status: 'ongoing' | 'upcoming' | 'past'
+   558→  date: string                    // ISO/date string formatted "Nov 21, 2026"
+   559→  time: string                    // "10:00 AM - 01:00 PM"
+   560→  location: string                // "Yahya Hub", "Google Meet"
+   561→  audience: string
+   562→  fee: number                     // Naira; 0 = Free
+   563→  instagramUrl: string
+   564→  bookable: boolean               // false for "ongoing"
+   565→}
+   566→```
+   567→
+   568→### `Client` (YH Connect)
+   569→```ts
+   570→{
+   571→  uid: string
+   572→  clientType: 'Individual' | 'Company' | 'Government Agency'
+   573→  fullName: string
+   574→  email: string
+   575→  phone: string
+   576→  address: string
+   577→  // dashboard likely has: projects[], payments[], messages[]
+   578→}
+   579→```
+   580→
+   581→### `Talent` (YH Connect) — multi-step registration implies a richer schema
+   582→```ts
+   583→{
+   584→  uid: string
+   585→  fullName: string
+   586→  phone: string
+   587→  email: string
+   588→  password: string                // (handled by Firebase Auth, not stored in Firestore)
+   589→  // Step 2+ (inferred): profession, skills, portfolio links, certifications,
+   590→  //                       verification documents, hourly rate, bio, profile photo...
+   591→}
+   592→```
+   593→
+   594→### `Admin`
+   595→```ts
+   596→{ uid: string, email: string, role: 'admin' }
+   597→// /admin/dashboard likely manages: workspaces, programs, events, bookings, enrollments, users
+   598→```
+   599→
+   600→### `Booking` (workspace)
+   601→```ts
+   602→{
+   603→  id: string
+   604→  workspaceId: string
+   605→  userId?: string                 // optional (guest bookings allowed)
+   606→  mode: 'daily' | 'hourly'
+   607→  dates: string[]                 // ISO dates
+   608→  hours?: string[]                // ['09:00','10:00',...]
+   609→  name: string
+   610→  phone: string
+   611→  email: string
+   612→  reason: 'Private Meeting' | 'Seminar' | 'Workshop' | 'Events'
+   613→  amount: number
+   614→  paymentStatus: 'pending' | 'paid'
+   615→  paystackRef?: string
+   616→}
+   617→```
+   618→
+   619→### `Enrollment` (program)
+   620→```ts
+   621→{
+   622→  id: string, programId: string,
+   623→  fullName: string, email: string, phone: string,
+   624→  gender: 'Male' | 'Female',
+   625→  educationalLevel: string,
+   626→  amount: number, paymentStatus, paystackRef
+   627→}
+   628→```
+   629→
+   630→---
+   631→
+   632→## 10. Images & Media Assets
+   633→
+   634→All served from Firebase Storage. Confirmed URLs:
+   635→
+   636→| Asset | URL | Used on |
+   637→|---|---|---|
+   638→| **Logo** (SVG, 40×40) | `https://firebasestorage.googleapis.com/v0/b/yahyahub-e7643.firebasestorage.app/o/bookings-n-products%2Flogo%2Flogo.svg?alt=media&token=ab0d0a31-9584-43f1-bc95-2a8c66473a8c` | Header on every page, auth pages |
+   639→| **Hero background video** (MP4) | `https://firebasestorage.googleapis.com/v0/b/yahyahub-e7643.firebasestorage.app/o/bookings-n-products%2Fhero%2Fvideo%2Fyahya_hub_commercial.mp4?alt=media&token=24f59eeb-8203-4a75-8763-0c1d4454b9b7` | Home hero |
+   640→| **Paystack logo** (PNG) | `https://firebasestorage.googleapis.com/v0/b/yahyahub-e7643.firebasestorage.app/o/bookings-n-products%2Flogo%2Fpaystack-logo.png?alt=media&token=361ababc-d652-4a55-b56c-86b87f25f62a` | Booking/enroll checkout steps |
+   641→| **Co-working space image** (JPEG) | `https://firebasestorage.googleapis.com/v0/b/yahyahub-e7643.firebasestorage.app/o/bookings-n-products%2Fworkspaces%2Fco-working_space.jpeg?alt=media&token=6f46057d-8c94-48ad-a5fb-f1f320bedb6c` | "workspace" card View Space modal |
+   642→| **Executive Office image** (JPG) | `https://firebasestorage.googleapis.com/v0/b/yahya-hub-backed.firebasestorage.app/o/Yahya%20Hub%20Web%20App%2FStatic%20Assets%2Fworkspaces%2Fexecutive-office.jpg?alt=media&token=24266ec3-18df-459a-8057-041db5cbdb41` | Executive Office View Space modal |
+   643→
+   644→**Two storage buckets are in use:**
+   645→1. `yahyahub-e7643` (primary, new app) — paths under `bookings-n-products/{logo,hero,workspaces,...}/`
+   646→2. `yahya-hub-backed` (legacy) — paths under `Yahya Hub Web App/Static Assets/workspaces/`
+   647→
+   648→All other images observed in the UI are **inline Lucide SVG icons** (rendered as `<svg>` directly in the DOM, not `<img>`). Confirmed icons used: `mail`, `phone`, `signal`, `zap`, `thermometer`, `briefcase-business`, `image`, `star`, `armchair`, `desk`, `sofa`, `tv`, `users`, `clock`, `calendar`, `map-pin`, `menu`, `x`, `chevron-down`, `chevron-right`, `chevron-left`, `circle-check`, `lightbulb`, `telescope`, `heart`, `eye`, `eye-off`, `arrow-left`, `arrow-right`.
+   649→
+   650→**Favicon:** `/favicon.ico` (Next.js default location).
+   651→
+   652→---
+   653→
+   654→## 11. Special Features / Notable Behaviors
+   655→
+   656→1. **Timezone-gated booking UI.** The Workspaces section's "Check Availability" buttons only render real calendar UIs when `Intl.DateTimeFormat().resolvedOptions().timeZone === 'Africa/Lagos'`. Otherwise, every workspace card is replaced with a "Timezone Mismatch" warning card (amber-50 bg) instructing the user to set their system timezone to Central Africa Time. **Rebuild note:** if you want non-Nigeria visitors to see the calendar, you'll need to either (a) replicate this gating for parity, or (b) drop the gate entirely and accept the user's local timezone — but then daily/hourly slot availability would need timezone conversion logic server-side.
+   657→
+   658→2. **Paystack payment integration.** The Paystack logo appears on the final checkout step of both workspace bookings and program enrollments. The "Pay Now" button presumably initializes a Paystack inline popup or redirect. (Not triggered during exploration to avoid real charges.)
+   659→
+   660→3. **Firebase real-time listeners.** Firestore Listen channels are open on every page — the site subscribes to live updates for workspaces, programs, events (so admin changes reflect instantly).
+   661→
+   662→4. **Hidden admin entry point.** The footer's Legal column has a third link whose visible text is just "." but whose `href` is `/admin/login`. Discreet admin access.
+   663→
+   664→5. **Three role-based dashboards.** `/admin/dashboard`, `/client/dashboard`, `/talent/dashboard` all exist but are protected. Hitting them while logged out redirects to the role's login page AND fires an "Access Denied" Sonner toast.
+   665→
+   666→6. **Distinct YH Connect sub-app.** The `/products/yh-connect` page and everything under `/client/*` and `/talent/*` form a semi-separate product with its own secondary navigation bar (Home/Login/Sign Up) rendered *below* the main Yahya Hub header. The visual language is the same (same colors, fonts, components).
+   667→
+   668→7. **Multi-step talent registration** with a progress bar — at least 2 steps (Step 1: Account Information collected).
+   669→
+   670→8. **Status badges with semantic colors:**
+   671→   - Green (`bg-green-500/20 text-green-600 border-green-500/30`): "Operational", "Ongoing", "Online", "Physical"
+   672→   - Yellow (`bg-yellow-500/20 text-yellow-600 border-yellow-500/30`): "Upcoming", "hours"
+   673→   - The "MOST RECENT" tag on the first past event is also a styled badge.
+   674→
+   675→9. **Sonner toaster** with F8 shortcut to focus the notification region. Toasts have title + description + dismiss button.
+   676→
+   677→10. **Responsive design:**
+   678→    - Header collapses to hamburger below `md` (768px)
+   679→    - Hero status cards become a 4-button carousel on mobile (vs 2×2 grid on desktop)
+   680→    - Workspace/Program/Event grids: 1 col mobile → 2 col tablet → 3 col desktop
+   681→    - Footer: 1 col mobile → 4 col desktop
+   682→    - YH Connect "For Clients"/"For Talents" panels stack on mobile
+   683→
+   684→11. **Card hover states.** Titles of program/event cards have `hover:underline cursor-pointer` (clickable to open modals on past-events, less clearly so on home program cards).
+   685→
+   686→12. **"Completed" / "Past" links** in the home page section headers are subtle text + chevron-right links to `/programs` and `/events` respectively — a consistent "see all" pattern.
+   687→
+   688→---
+   689→
+   690→## 12. Recommendations / Notes for Rebuilding in Next.js
+   691→
+   692→- **Stack to use:** Next.js 14+ App Router, Tailwind CSS, shadcn/ui (Radix primitives), lucide-react, Sonner, Firebase Auth + Firestore + Storage, Paystack JS SDK.
+   693→- **Fonts:** Load Inter from `next/font/google` with weights 400, 500, 600, 700 and apply as the default sans-serif via Tailwind config (`fontFamily: { sans: ['var(--font-inter)', 'sans-serif'] }`).
+   694→- **Theme:** Reproduce the CSS variables exactly (see §4) — they map 1:1 to shadcn/ui's token system. The hover color `#013756` (slightly lighter than primary `#013156`) is hard-coded on nav links — replicate or replace with `text-primary`.
+   695→- **Components to build first:** `Header`, `Footer`, `WorkspaceCard`, `ProgramCard`, `EventCard`, `BookingModal` (with Daily/Hourly Tabs + Calendar), `EnrollModal`, `EventDetailsModal`, `AmenitiesModal`, `StatusBadge`, `StarRating`, `SecondaryNav` (for YH Connect).
+   696→- **Calendar component:** Use `react-day-picker` (what shadcn/ui's Calendar wraps). Replicate the daily (full month grid) and hourly (3 selects + slot button list) modes.
+   697→- **Auth:** Use Firebase JS SDK `signInWithEmailAndPassword` + `createUserWithEmailAndPassword`. For the talent multi-step form, use a client-side state machine + `react-hook-form` for validation.
+   698→- **Protected routes:** Server-side (middleware) or client-side redirect with `toast.error("Access Denied", { description: "You do not have permission to access this page." })`.
+   699→- **Timezone gate:** Decide whether to keep it (strict Nigeria-only) or drop it (international-friendly). If keeping, check `Intl.DateTimeFormat().resolvedOptions().timeZone` and conditionally render the mismatch card.
+   700→- **Currency formatting:** Prices are in Naira with the `₦` prefix and thousands separators — use `Intl.NumberFormat('en-NG', { style: 'currency', currency: 'NGN' })` or hard-code `₦` + `toLocaleString()`.
+   701→- **Date formatting:** "Nov 21, 2026" style → `Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', year: 'numeric' })`.
+   702→- **Firebase Storage:** Use the same bucket structure or consolidate into one. Image URLs include long tokens — for the clone, use Firebase Storage SDK to generate signed URLs or make buckets public.
+   703→- **Pages to stub first (MVP):** `/`, `/about`, `/products/yh-connect`, then booking/enroll/event-detail modals, then `/programs` & `/events` list pages, then auth pages, then dashboards last.
+   704→
+   705→---
+   706→
+   707→## 13. Screenshot Index
+   708→
+   709→All saved in `/home/z/my-project/screenshots/`:
+   710→
+   711→| File | Description |
+   712→|---|---|
+   713→| `00-products-dropdown.png` | Products dropdown open on home (showing "YH Connect") |
+   714→| `01-home-full.png` | Home page full (with timezone-mismatch cards) |
+   715→| `02-about-full.png` | About page full |
+   716→| `03-programs-full.png` | Programs (Completed) page full |
+   717→| `04-events-full.png` | Events (Past) page full |
+   718→| `05-event-modal.png` | Event details modal (Games Night May Edition) |
+   719→| `06-blog-full.png` | Blog "Coming Soon" page |
+   720→| `07-privacy-full.png` | Privacy Policy page |
+   721→| `08-terms-full.png` | Terms of Service page |
+   722→| `09-yh-connect-full.png` | YH Connect landing page full |
+   723→| `10-login-dropdown.png` | Login dropdown (As a Client / As a Talent) |
+   724→| `11-client-login.png` | Client login page |
+   725→| `12-client-signup.png` | 404 page (from `/client/signup`) |
+   726→| `13-client-register.png` | Client registration form |
+   727→| `14-signup-dropdown.png` | Sign Up dropdown |
+   728→| `15-talent-register.png` | Talent registration Step 1 |
+   729→| `16-talent-login.png` | Talent login page |
+   730→| `17-admin-login.png` | Admin login page |
+   731→| `18-enroll-program.png` | Home after clicking Enroll Now |
+   732→| `19-enroll-modal.png` | Enroll modal Step 1 (contact info) |
+   733→| `20-enroll-modal-step2.png` | Enroll modal Step 2 (gender, education, Paystack) |
+   734→| `21-book-spot.png` | Book a Spot modal for event |
+   735→| `22-home-with-workspaces.png` | Home page with timezone override applied (real workspace cards visible) |
+   736→| `23-check-availability.png` | Booking calendar modal (Daily tab, no date selected) |
+   737→| `24-calendar-selected.png` | Calendar with a date selected |
+   738→| `25-checkout.png` | Review Your Booking modal (form + Paystack) |
+   739→| `26-hourly-tab.png` | Booking modal Hourly tab (year/month/day selects + hour slots) |
+   740→| `27-view-space.png` | View Space image modal |
+   741→| `28-home-mobile.png` | Home page on mobile (375×812) |
+   742→| `29-mobile-menu.png` | Mobile hamburger menu open |
+   743→| `30-events-full-tz.png` | Events page (with tz set) |
+   744→| `31-webinar-writeup.png` | Webinar event details modal (long write-up) |
+   745→| `32-programs-full-tz.png` | Programs page (with tz set) |
+   746→| `33-admin-redirect.png` | 404 from `/admin` |
+   747→| `34-products.png` | Products index page |
+   748→| `35-executive-view-space.png` | Executive office card view |
+   749→| `36-home-final.png` | Final home page state |
+   750→
+   751→---
+   752→
+   753→## 14. Appendix — Sample HTML snippets (for pixel-faithful rebuild)
+   754→
+   755→### Header logo + nav
+   756→```html
+   757→<a class="flex items-center gap-2" href="/">
+   758→  <img alt="Yahya Hub Logo" width="40" height="40"
+   759→       src=".../bookings-n-products/logo/logo.svg?alt=media&token=...">
+   760→  <span class="text-xl font-bold text-primary">Yahya Hub</span>
+   761→</a>
+   762→<nav class="hidden items-center space-x-6 md:flex">
+   763→  <a class="font-medium text-gray-700 transition-colors hover:text-[#013756] hover:underline hover:underline-offset-4" href="/about">About Us</a>
+   764→  <a class="font-medium text-gray-700 transition-colors hover:text-[#013756] hover:underline hover:underline-offset-4" href="/#workspaces">Workspaces</a>
+   765→  <a class="font-medium text-gray-700 transition-colors hover:text-[#013756] hover:underline hover:underline-offset-4" href="/#programs">Programs</a>
+   766→  <a class="font-medium text-gray-700 transition-colors hover:text-[#013756] hover:underline hover:underline-offset-4" href="/#events">Events</a>
+   767→  <button class="group flex items-center gap-1 font-medium text-gray-700 hover:text-[#013756]" aria-haspopup="menu">
+   768→    Products
+   769→    <svg class="lucide lucide-chevron-down h-4 w-4 transition-transform duration-200 group-data-[state=open]:rotate-180">...</svg>
+   770→  </button>
+   771→</nav>
+   772→```
+   773→
+   774→### Hero CTAs
+   775→```html
+   776→<a class="bg-primary text-primary-foreground hover:bg-primary/90 h-11 rounded-md px-8" href="/#workspaces">Explore Workspaces</a>
+   777→<a class="border h-11 rounded-md px-8 border-white text-white hover:bg-white hover:text-black" href="/#programs">Our Programs</a>
+   778→```
+   779→
+   780→### Status badge (green variant)
+   781→```html
+   782→<div class="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold
+   783→            bg-green-500/20 text-green-600 border-green-500/30 capitalize">Operational</div>
+   784→```
+   785→
+   786→### Card (workspace / program / event)
+   787→```html
+   788→<div class="rounded-lg border bg-card text-card-foreground shadow-sm flex flex-col">
+   789→  <div class="flex flex-col p-6 space-y-3">
+   790→    <div class="flex justify-between items-start">
+   791→      <div class="tracking-tight text-xl font-semibold text-foreground">Office of Two</div>
+   792→      <button class="border h-9 rounded-md px-3 shrink-0 hover:bg-secondary">
+   793→        <svg class="lucide lucide-image mr-1 h-4 w-4"/>
+   794→        View Space
+   795→      </button>
+   796→    </div>
+   797→    <div class="line-clamp-2 text-sm text-foreground">A private office designed for two...</div>
+   798→  </div>
+   799→  <div class="p-6 pt-0 flex-grow"><!-- metadata row --></div>
+   800→  <div class="px-6 pb-4"><div class="shrink-0 bg-border h-[1px] w-full"></div></div>
+   801→  <div class="p-6 pt-0 flex justify-between items-center mt-auto">
+   802→    <p class="text-xl font-bold text-foreground">₦1,000 <span class="text-sm font-normal">/hour</span></p>
+   803→    <button class="bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2">Check Availability</button>
+   804→  </div>
+   805→</div>
+   806→```
+   807→
+   808→### Footer
+   809→```html
+   810→<footer class="border-t bg-background">
+   811→  <div class="container mx-auto px-4 py-8">
+   812→    <div class="grid grid-cols-1 gap-8 md:grid-cols-4">
+   813→      <div>
+   814→        <h3 class="font-bold">Contact</h3>
+   815→        <div class="mt-4 space-y-3 rounded-lg border bg-muted/50 p-4 text-sm">
+   816→          <a href="mailto:yahyahub6@gmail.com" class="flex items-center gap-3 text-muted-foreground hover:text-foreground">
+   817→            <svg class="lucide lucide-mail h-4 w-4 shrink-0 text-secondary"/> yahyahub6@gmail.com
+   818→          </a>
+   819→          <a href="tel:07043925169" class="flex items-center gap-3 text-muted-foreground hover:text-foreground">
+   820→            <svg class="lucide lucide-phone h-4 w-4 shrink-0 text-secondary"/> 07043925169
+   821→          </a>
+   822→        </div>
+   823→      </div>
+   824→      <div><h3 class="font-bold">Community</h3>
+   825→        <ul class="mt-4 space-y-2">
+   826→          <li><a class="text-muted-foreground hover:text-foreground" href="/#programs">Programs</a></li>
+   827→          <li><a class="text-muted-foreground hover:text-foreground" href="/#events">Events</a></li>
+   828→          <li><a class="text-muted-foreground hover:text-foreground" href="/blog">Blog</a></li>
+   829→        </ul>
+   830→      </div>
+   831→      <div><h3 class="font-bold">Social</h3>
+   832→        <ul class="mt-4 space-y-2">
+   833→          <li><a class="text-muted-foreground hover:text-foreground" href="...facebook...">Facebook</a></li>
+   834→          <li><a class="text-muted-foreground hover:text-foreground" href="...x.com/YahyaHub...">Twitter</a></li>
+   835→          <li><a class="text-muted-foreground hover:text-foreground" href="...linkedin...">LinkedIn</a></li>
+   836→        </ul>
+   837→      </div>
+   838→      <div><h3 class="font-bold">Legal</h3>
+   839→        <ul class="mt-4 space-y-2">
+   840→          <li><a class="text-muted-foreground hover:text-foreground" href="/privacy">Privacy</a></li>
+   841→          <li><a class="text-muted-foreground hover:text-foreground" href="/terms">Terms</a></li>
+   842→          <li><a class="text-muted-foreground hover:text-foreground" href="/admin/login">.</a></li>
+   843→        </ul>
+   844→      </div>
+   845→    </div>
+   846→    <div class="mt-8 border-t pt-8 text-center text-muted-foreground">
+   847→      <p>© 2026 Yahya Hub. All rights reserved.</p>
+   848→    </div>
+   849→  </div>
+   850→</footer>
+   851→```
+   852→
+   853→---
+   854→
+   855→**End of analysis.** This document, combined with the 36 screenshots in `/home/z/my-project/screenshots/`, should serve as a complete spec for rebuilding the Yahya Hub site in Next.js.
+   856→

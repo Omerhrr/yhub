@@ -3,11 +3,11 @@
 import {
   Image as ImageIcon,
   Armchair,
-  Desk,
+  LampDesk,
   Sofa,
   Tv,
   Projector,
-  Whiteboard,
+  Presentation,
   type LucideIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -23,11 +23,11 @@ import { cn } from "@/lib/utils";
 
 const AMENITY_ICONS: Record<string, LucideIcon> = {
   armchair: Armchair,
-  desk: Desk,
+  desk: LampDesk,
   sofa: Sofa,
   tv: Tv,
   projector: Projector,
-  whiteboard: Whiteboard,
+  whiteboard: Presentation,
 };
 
 export function AmenityChip({ amenity }: { amenity: Amenity }) {

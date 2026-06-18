@@ -7,7 +7,11 @@ generator client {
 
 datasource db {
   provider = "sqlite"
-  url      = env("DATABASE_URL")
+  // Relative path — creates db/custom.db inside the project root.
+  // SQLite URLs are just file paths (not secrets), so we hardcode it here
+  // instead of requiring a DATABASE_URL env var. This means the app works
+  // out of the box after `bun run db:push` without any .env setup.
+  url      = "file:./db/custom.db"
 }
 
 // Singleton row holding the home page hero content

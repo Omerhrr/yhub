@@ -2,10 +2,18 @@
 
 import { Mail, Phone } from "lucide-react";
 import { useNav, type ViewKey } from "@/store/nav";
+import { useContent } from "@/store/content";
 import { SITE } from "@/data/content";
 
 export function Footer() {
   const { navigate } = useNav();
+  const { footer } = useContent();
+
+  const email = footer?.email ?? SITE.email;
+  const phone = footer?.phone ?? SITE.phone;
+  const facebook = footer?.facebook ?? SITE.social.facebook;
+  const twitter = footer?.twitter ?? SITE.social.twitter;
+  const linkedin = footer?.linkedin ?? SITE.social.linkedin;
 
   const go = (v: ViewKey, anchor?: string) => navigate(v, anchor);
 
@@ -18,18 +26,18 @@ export function Footer() {
             <h3 className="font-bold">Contact</h3>
             <div className="mt-4 space-y-3 rounded-lg border bg-muted/50 p-4 text-sm">
               <a
-                href={`mailto:${SITE.email}`}
+                href={`mailto:${email}`}
                 className="flex items-center gap-3 text-muted-foreground transition-colors hover:text-foreground"
               >
                 <Mail className="h-4 w-4 shrink-0 text-secondary" />
-                {SITE.email}
+                {email}
               </a>
               <a
-                href={`tel:${SITE.phone}`}
+                href={`tel:${phone}`}
                 className="flex items-center gap-3 text-muted-foreground transition-colors hover:text-foreground"
               >
                 <Phone className="h-4 w-4 shrink-0 text-secondary" />
-                {SITE.phone}
+                {phone}
               </a>
             </div>
           </div>
@@ -71,7 +79,7 @@ export function Footer() {
             <ul className="mt-4 space-y-2">
               <li>
                 <a
-                  href={SITE.social.facebook}
+                  href={facebook}
                   target="_blank"
                   rel="noreferrer"
                   className="text-muted-foreground transition-colors hover:text-foreground"
@@ -81,7 +89,7 @@ export function Footer() {
               </li>
               <li>
                 <a
-                  href={SITE.social.twitter}
+                  href={twitter}
                   target="_blank"
                   rel="noreferrer"
                   className="text-muted-foreground transition-colors hover:text-foreground"
@@ -91,7 +99,7 @@ export function Footer() {
               </li>
               <li>
                 <a
-                  href={SITE.social.linkedin}
+                  href={linkedin}
                   target="_blank"
                   rel="noreferrer"
                   className="text-muted-foreground transition-colors hover:text-foreground"

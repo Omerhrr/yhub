@@ -473,7 +473,7 @@ export function TalentRegisterPage() {
   );
 }
 
-/* ---------- Mock dashboards ---------- */
+/* ---------- Mock dashboards (Client & Talent — Admin has its own in AdminDashboard.tsx) ---------- */
 function MockDashboard({
   role,
   logout,
@@ -505,33 +505,6 @@ function MockDashboard({
       </div>
       <div className="mt-8">{children}</div>
     </div>
-  );
-}
-
-export function AdminDashboard() {
-  const { setAuth } = useNav();
-  return (
-    <MockDashboard role="Admin" logout={() => setAuth("admin", false)}>
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
-        {[
-          { label: "Workspaces", value: "7" },
-          { label: "Programs", value: "7" },
-          { label: "Events", value: "9" },
-          { label: "YH Connect Users", value: "—" },
-        ].map((s) => (
-          <Card key={s.label} className="p-6">
-            <p className="text-sm text-muted-foreground">{s.label}</p>
-            <p className="mt-1 text-3xl font-bold">{s.value}</p>
-          </Card>
-        ))}
-      </div>
-      <Card className="mt-6 p-6">
-        <h2 className="text-lg font-semibold">Recent Bookings</h2>
-        <p className="mt-2 text-sm text-muted-foreground">
-          Booking management would appear here in the full build.
-        </p>
-      </Card>
-    </MockDashboard>
   );
 }
 

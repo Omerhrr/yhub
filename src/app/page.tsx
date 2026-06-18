@@ -21,11 +21,12 @@ import {
   ClientRegisterPage,
   TalentLoginPage,
   TalentRegisterPage,
-  AdminDashboard,
   ClientDashboard,
   TalentDashboard,
 } from "@/components/site/pages/AuthPages";
+import { AdminDashboard } from "@/components/site/pages/AdminDashboard";
 import { useNav } from "@/store/nav";
+import { useContent } from "@/store/content";
 import { toast } from "sonner";
 
 function NotFoundPage() {
@@ -49,6 +50,14 @@ function NotFoundPage() {
 
 export default function Home() {
   const { view, adminAuthed, clientAuthed, talentAuthed, navigate } = useNav();
+  const { fetchContent, lastFetched } = useContent();
+
+  // Fetch site content from the API on mount (falls back to hardcoded defaults on error)
+  useEffect(() => {
+    if (!lastFetched) {
+      fetchContent();
+    }
+  }, [lastFetched, fetchContent]);
 
   // Guard protected views
   useEffect(() => {

@@ -1,23 +1,25 @@
 "use client";
 
 import { useEffect } from "react";
-import { ArrowRight, ChevronRight } from "lucide-react";
+import { ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { StatusCard } from "../StatusCard";
 import { WorkspaceCard } from "../WorkspaceCard";
 import { ProgramCard } from "../ProgramCard";
 import { HomeEventCard } from "../EventCard";
 import { useNav } from "@/store/nav";
-import {
-  HERO_VIDEO_URL,
-  statusCards,
-  workspaces,
-  upcomingPrograms,
-  homeEvents,
-} from "@/data/content";
+import { useContent } from "@/store/content";
+import { HERO_VIDEO_URL } from "@/data/content";
 
 export function HomePage() {
   const { navigate, homeAnchor } = useNav();
+  const {
+    home,
+    statusCards,
+    workspaces,
+    upcomingPrograms,
+    homeEvents,
+  } = useContent();
 
   // scroll to anchor when navigating with one
   useEffect(() => {
@@ -27,6 +29,14 @@ export function HomePage() {
       el.scrollIntoView({ behavior: "smooth", block: "start" });
     }
   }, [homeAnchor]);
+
+  const heroTitle = home?.heroTitle ?? "Welcome to Yahya Hub";
+  const heroSubtitle = home?.heroSubtitle ?? "A vibrant space for ideas, creativity, and collaboration. We offer coworking spaces, run skill-building programs, and host events that inspire innovation across every field.";
+  const heroVideoUrl = home?.heroVideoUrl ?? HERO_VIDEO_URL;
+  const primaryCtaText = home?.heroCtaPrimaryText ?? "Explore Workspaces";
+  const primaryCtaAnchor = home?.heroCtaPrimaryAnchor ?? "workspaces";
+  const secondaryCtaText = home?.heroCtaSecondaryText ?? "Our Programs";
+  const secondaryCtaAnchor = home?.heroCtaSecondaryAnchor ?? "programs";
 
   return (
     <div className="flex flex-col">
@@ -41,7 +51,7 @@ export function HomePage() {
           className="absolute inset-0 h-full w-full object-cover"
           poster=""
         >
-          <source src={HERO_VIDEO_URL} type="video/mp4" />
+          <source src={heroVideoUrl} type="video/mp4" />
         </video>
         {/* Navy overlay */}
         <div className="absolute inset-0 bg-primary/70" />
@@ -51,28 +61,26 @@ export function HomePage() {
             {/* Left: copy + CTAs */}
             <div className="space-y-6 text-white">
               <h1 className="text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl">
-                Welcome to Yahya Hub
+                {heroTitle}
               </h1>
               <p className="text-base text-white/90 sm:text-lg max-w-xl">
-                A vibrant space for ideas, creativity, and collaboration. We
-                offer coworking spaces, run skill-building programs, and host
-                events that inspire innovation across every field.
+                {heroSubtitle}
               </p>
               <div className="flex flex-wrap items-center gap-3">
                 <Button
                   size="lg"
                   className="h-11 px-8"
-                  onClick={() => navigate("home", "workspaces")}
+                  onClick={() => navigate("home", primaryCtaAnchor)}
                 >
-                  Explore Workspaces
+                  {primaryCtaText}
                 </Button>
                 <Button
                   size="lg"
                   variant="outline"
                   className="h-11 border-white px-8 text-white hover:bg-white hover:text-black"
-                  onClick={() => navigate("home", "programs")}
+                  onClick={() => navigate("home", secondaryCtaAnchor)}
                 >
-                  Our Programs
+                  {secondaryCtaText}
                 </Button>
               </div>
             </div>

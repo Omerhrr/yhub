@@ -24,11 +24,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { useNav } from "@/store/nav";
+import { useContent } from "@/store/content";
 import {
-  workspaces,
-  upcomingPrograms,
-  homeEvents,
-  pastEvents,
   formatNaira,
   PAYSTACK_LOGO_URL,
   type Amenity,
@@ -45,6 +42,7 @@ const BOOKING_REASONS = ["Private Meeting", "Seminar", "Workshop", "Events"];
 /* ---------- View Space ---------- */
 export function ViewSpaceModal() {
   const { modal, closeModal } = useNav();
+  const { workspaces } = useContent();
   const workspaceId =
     modal.kind === "view-space" ? modal.workspaceId : null;
   const ws = workspaces.find((w) => w.id === workspaceId);
@@ -78,6 +76,7 @@ export function ViewSpaceModal() {
 /* ---------- Amenities ---------- */
 export function AmenitiesModal() {
   const { modal, closeModal } = useNav();
+  const { workspaces } = useContent();
   const workspaceId = modal.kind === "amenities" ? modal.workspaceId : null;
   const ws = workspaces.find((w) => w.id === workspaceId);
 
@@ -109,6 +108,7 @@ export function AmenitiesModal() {
 /* ---------- Booking ---------- */
 export function BookingModal() {
   const { modal, closeModal } = useNav();
+  const { workspaces } = useContent();
   const workspaceId = modal.kind === "booking" ? modal.workspaceId : null;
   const ws = workspaces.find((w) => w.id === workspaceId);
 
@@ -353,6 +353,7 @@ export function BookingModal() {
 /* ---------- Enroll ---------- */
 export function EnrollModal() {
   const { modal, closeModal } = useNav();
+  const { upcomingPrograms } = useContent();
   const programId = modal.kind === "enroll" ? modal.programId : null;
   const program = upcomingPrograms.find((p) => p.id === programId);
 
@@ -457,6 +458,7 @@ export function EnrollModal() {
 /* ---------- Event Book Spot ---------- */
 export function EventBookModal() {
   const { modal, closeModal } = useNav();
+  const { homeEvents, pastEvents } = useContent();
   const eventId = modal.kind === "event-book" ? modal.eventId : null;
   const event = [...homeEvents, ...pastEvents].find((e) => e.id === eventId);
 
@@ -535,6 +537,7 @@ export function EventBookModal() {
 /* ---------- Event Details ---------- */
 export function EventDetailsModal() {
   const { modal, closeModal } = useNav();
+  const { pastEvents } = useContent();
   const eventId = modal.kind === "event-details" ? modal.eventId : null;
   const event = pastEvents.find((e) => e.id === eventId);
 

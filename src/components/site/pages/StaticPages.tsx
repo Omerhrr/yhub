@@ -25,11 +25,10 @@ import { StatusBadge } from "../StatusCard";
 import { useNav } from "@/store/nav";
 import {
   SITE,
-  completedPrograms,
-  pastEvents,
   yhConnectTestimonials,
   formatNaira,
 } from "@/data/content";
+import { useContent } from "@/store/content";
 
 /* ---------- About ---------- */
 export function AboutPage() {
@@ -137,6 +136,7 @@ export function AboutPage() {
 /* ---------- Programs (Completed) ---------- */
 export function ProgramsPage() {
   const { navigate } = useNav();
+  const { completedPrograms } = useContent();
   return (
     <div className="container mx-auto max-w-6xl px-4 py-16">
       <button
@@ -162,6 +162,7 @@ export function ProgramsPage() {
 /* ---------- Events (Past) ---------- */
 export function EventsPage() {
   const { navigate, openModal } = useNav();
+  const { pastEvents } = useContent();
   return (
     <div className="container mx-auto max-w-6xl px-4 py-16">
       <button

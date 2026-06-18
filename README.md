@@ -115,11 +115,62 @@ The original site gates the Workspaces section behind an `Africa/Lagos` timezone
 # Install dependencies
 bun install
 
+# Create the SQLite database + generate the Prisma client
+bun run db:push
+
+# Seed the database with default Yahya Hub content
+# (safe to re-run — updates existing rows in place)
+bun run seed
+
 # Run the dev server
 bun run dev
 
 # Open http://localhost:3000
 ```
+
+## Admin Panel
+
+The admin panel lives at `/admin/login` (also reachable from the footer's hidden `.` link). Use any email + password to log in (mock auth).
+
+Once logged in, you land on `/admin/dashboard` with a tabbed sidebar:
+
+- **Hero** — edit the home page hero: title, subtitle, primary/secondary CTA text & anchor, background video URL
+- **Status Cards** — full CRUD for the 4 status cards on the hero (Network / Power / Climate / Workspace)
+- **Workspaces** — full CRUD for the 7 workspaces. Each workspace has name, description, rating, review count, hourly/daily rates, image URL, booking-enabled flag, and an editable amenities list (icon + label per amenity)
+- **Programs** — full CRUD for both upcoming programs (shown on home) and completed programs (shown on /programs). Set status to "upcoming" or "completed" and add cohort/type labels for completed programs
+- **Events** — full CRUD for both home events and past events. Each event has title, description, optional long-form write-up (shown in the event details modal), category, mode (Online/Physical), status (ongoing/upcoming/past), date/time/location, audience, fee, Instagram URL, and flags for "most recent" badge and bookable button
+- **Footer** — edit the contact email/phone and social links (Facebook/Twitter/LinkedIn)
+
+All changes save instantly to the SQLite database via the `/api/admin/*` endpoints. The public site reads from `/api/content` on page load, so admin edits appear on the next page refresh (or by clicking any nav link, which re-renders and re-fetches).
+
+### API Endpoints
+
+| Method | Path | Description |
+|---|---|---|
+| `GET` | `/api/content` | Public — returns all site content for rendering |
+| `PUT` | `/api/admin/home` | Update hero content (singleton) |
+| `PUT` | `/api/admin/footer` | Update footer content (singleton) |
+| `GET/POST` | `/api/admin/status-cards` | List / create status cards |
+| `PUT/DELETE` | `/api/admin/status-cards/[id]` | Update / delete a status card |
+| `GET/POST` | `/api/admin/workspaces` | List / create workspaces |
+| `PUT/DELETE` | `/api/admin/workspaces/[id]` | Update / delete a workspace |
+| `GET/POST` | `/api/admin/programs` | List / create programs |
+| `PUT/DELETE` | `/api/admin/programs/[id]` | Update / delete a program |
+| `GET/POST` | `/api/admin/events` | List / create events |
+| `PUT/DELETE` | `/api/admin/events/[id]` | Update / delete an event |
+
+### Database Schema
+
+The SQLite database has 6 tables (defined in `prisma/schema.prisma`):
+
+- `HomeContent` — singleton row (id = "home") holding hero text
+- `FooterContent` — singleton row (id = "footer") holding contact + social links
+- `StatusCard` — multiple rows, ordered by `order` field
+- `Workspace` — multiple rows; `amenities` stored as a JSON string
+- `Program` — multiple rows; `status` field separates upcoming from completed
+- `EventItem` (table `events`) — multiple rows; `list` field separates home events from past events
+
+If the database is empty or unreachable, the site falls back to the hardcoded defaults in `src/data/content.ts`, so it always renders something.
 
 ## Notes for Further Development
 

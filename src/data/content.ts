@@ -473,38 +473,48 @@ export const yhConnectTestimonials: Testimonial[] = [
 ];
 
 // Status cards on the hero
+// Shape matches what /api/content returns (flat badgeLabel/badgeVariant fields,
+// not a nested badge object) so the store's defaults line up with the API data.
 export const statusCards = [
   {
     id: "network",
     title: "Network Status",
     icon: "signal",
-    badge: { label: "Operational", variant: "green" as const },
+    badgeLabel: "Operational",
+    badgeVariant: "green" as const,
     primary: "99.0% uptime",
     secondary: "Starlink connection active",
+    order: 0,
   },
   {
     id: "power",
     title: "Power Systems",
     icon: "zap",
-    badge: { label: "Operational", variant: "green" as const },
+    badgeLabel: "Operational",
+    badgeVariant: "green" as const,
     primary: "100% capacity",
     secondary: "Backup solar ready",
+    order: 1,
   },
   {
     id: "climate",
     title: "Climate Control",
     icon: "thermometer",
-    badge: { label: "Operational", variant: "green" as const },
+    badgeLabel: "Operational",
+    badgeVariant: "green" as const,
     primary: "26°C average",
     secondary: "Optimal temperature maintained",
+    order: 2,
   },
   {
     id: "workspace",
     title: "Workspace",
     icon: "briefcase-business",
-    badge: { label: "hours", variant: "yellow" as const },
+    badgeLabel: "hours",
+    badgeVariant: "yellow" as const,
     primary: "10 hours to close",
     secondary: "Open 9:00 AM - 8:00 PM",
+    order: 3,
   },
 ];
 

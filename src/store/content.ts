@@ -67,7 +67,7 @@ type ContentState = {
 export const useContent = create<ContentState>((set, get) => ({
   home: null,
   footer: null,
-  statusCards: defaultStatusCards as unknown as StatusCardData[],
+  statusCards: defaultStatusCards,
   workspaces: defaultWorkspaces,
   upcomingPrograms: defaultUpcomingPrograms,
   completedPrograms: defaultCompletedPrograms,

@@ -43,7 +43,8 @@ function StatusPill({
 export type StatusCardProps = {
   title: string;
   icon: string;
-  badge: { label: string; variant: BadgeVariant };
+  badgeLabel: string;
+  badgeVariant: BadgeVariant;
   primary: string;
   secondary: string;
 };
@@ -51,7 +52,8 @@ export type StatusCardProps = {
 export function StatusCard({
   title,
   icon,
-  badge,
+  badgeLabel,
+  badgeVariant,
   primary,
   secondary,
 }: StatusCardProps) {
@@ -65,7 +67,7 @@ export function StatusCard({
             {title}
           </span>
         </div>
-        <StatusPill label={badge.label} variant={badge.variant} />
+        <StatusPill label={badgeLabel} variant={badgeVariant} />
       </div>
       <div className="mt-2 text-lg font-bold text-foreground">{primary}</div>
       <div className="text-xs text-muted-foreground">{secondary}</div>

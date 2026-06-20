@@ -3,6 +3,7 @@ import { db } from "@/lib/db";
 import { generateTicketId, buildTicketEmail } from "@/lib/ticket";
 import { sendEmail } from "@/lib/email";
 import { verifyPaystackPayment } from "@/lib/paystack";
+import { DEFAULT_CONFIG } from "@/lib/slots";
 
 function isValidEmail(e: string) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e);

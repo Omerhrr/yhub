@@ -12,7 +12,6 @@ dist/
 .next/cache/
 
 # Bun
-bun.lockb
 .bun/
 
 # Production
@@ -60,6 +59,9 @@ worklog.md
 .zscripts/
 upload/
 download/
+
+# Examples (unrelated WS demos)
+examples/
 
 # Mini-services build artifacts
 mini-services/*/node_modules/

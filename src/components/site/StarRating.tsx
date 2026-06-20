@@ -14,22 +14,25 @@ export function StarRating({
   showCount?: boolean;
   size?: "sm" | "md";
 }) {
-  const dim = size === "md" ? "h-5 w-5" : "h-4 w-4";
+  const dim = size === "md" ? "h-4.5 w-4.5" : "h-3.5 w-3.5";
   return (
-    <div className="flex items-center gap-1.5">
-      <div className="flex items-center">
-        {[0, 1, 2, 3, 4].map((i) => (
+    <div className="flex items-center gap-1">
+      <div className="flex items-center gap-0.5">
+        {[1, 2, 3, 4, 5].map((i) => (
           <Star
             key={i}
-            className={cn(dim, "text-yellow-500 fill-current")}
+            className={cn(
+              dim,
+              i <= Math.round(rating)
+                ? "fill-yellow-400 text-yellow-400"
+                : "fill-muted text-muted-foreground/30"
+            )}
           />
         ))}
       </div>
-      <span className="text-sm font-medium text-foreground">{rating.toFixed(1)}</span>
+      <span className="text-xs font-semibold text-foreground">{rating.toFixed(1)}</span>
       {showCount && reviewCount !== undefined && (
-        <span className="text-xs text-muted-foreground">
-          ({reviewCount} reviews)
-        </span>
+        <span className="text-xs text-muted-foreground">({reviewCount})</span>
       )}
     </div>
   );

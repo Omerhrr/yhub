@@ -7,11 +7,10 @@ generator client {
 
 datasource db {
   provider = "sqlite"
-  // Relative path — creates db/custom.db inside the project root.
-  // SQLite URLs are just file paths (not secrets), so we hardcode it here
-  // instead of requiring a DATABASE_URL env var. This means the app works
-  // out of the box after `bun run db:push` without any .env setup.
-  url      = "file:./db/custom.db"
+  // Locally: file:./db/custom.db (default for dev)
+  // On Railway: set DATABASE_URL=file:/app/db/custom.db in environment variables
+  // and mount a persistent volume at /app/db so data survives deploys.
+  url      = env("DATABASE_URL")
 }
 
 // Singleton row holding the home page hero content
@@ -77,6 +76,7 @@ model Program {
   cohort      String?
   type        String?
   enrollable  Boolean @default(true)
+  imageUrl    String?
   order       Int     @default(0)
 }
 
@@ -86,7 +86,7 @@ model EventItem {
   description  String
   longWriteUp  String?
   category     String
-  mode         String  @default("Physical") // Online | Physical
+  mode         String  @default("Physical") // Online | Physical | Webinar
   isMostRecent Boolean @default(false)
   status       String  @default("upcoming") // ongoing | upcoming | past
   date         String
@@ -95,6 +95,8 @@ model EventItem {
   audience     String
   fee          Int     @default(0)
   instagramUrl String  @default("https://www.instagram.com/yahyahub/")
+  imageUrl     String?
+  videoUrl     String?
   bookable     Boolean @default(true)
   // Which list does this event belong to?
   // "home" = shown on home page events section
@@ -103,4 +105,36 @@ model EventItem {
   order        Int     @default(0)
 
   @@map("events")
+}
+
+// Per-workspace availability configuration set by admin
+model WorkspaceAvailability {
+  id            String @id @default(cuid())
+  workspaceId   String @unique
+  // JSON array of day numbers (0=Sun,1=Mon,...,6=Sat); default Mon-Fri
+  availableDays String @default("[1,2,3,4,5]")
+  openTime      String @default("09:00")   // "HH:MM" 24h
+  closeTime     String @default("20:00")   // "HH:MM" 24h
+  slotDuration  Int    @default(60)         // minutes per bookable slot
+  // JSON array of "YYYY-MM-DD" strings — dates with no availability
+  blackoutDates String @default("[]")
+
+  @@map("workspace_availability")
+}
+
+// Individual confirmed bookings (written when user pays)
+model WorkspaceBooking {
+  id          String   @id @default(cuid())
+  workspaceId String
+  date        String                        // "YYYY-MM-DD"
+  startTime   String                        // "HH:MM" (inclusive)
+  endTime     String                        // "HH:MM" (exclusive)
+  bookingType String   @default("hourly")   // "hourly" | "daily"
+  name        String
+  email       String
+  phone       String
+  reason      String
+  createdAt   DateTime @default(now())
+
+  @@map("workspace_bookings")
 }

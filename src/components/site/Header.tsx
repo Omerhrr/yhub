@@ -1,11 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import {
-  Menu,
-  ChevronDown,
-  ChevronRight,
-} from "lucide-react";
+import { Menu, ChevronDown, ChevronRight, Zap } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -19,39 +15,29 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
+import { Button } from "@/components/ui/button";
 import { useNav, type ViewKey } from "@/store/nav";
 import { LOGO_URL } from "@/data/content";
+import { cn } from "@/lib/utils";
 
-function NavItem({
-  label,
-  onClick,
-  href,
-}: {
-  label: string;
-  onClick?: () => void;
-  href?: string;
-}) {
+function NavLink({ label, active, onClick }: { label: string; active?: boolean; onClick: () => void }) {
   return (
-    <a
-      href={href ?? "#"}
-      onClick={(e) => {
-        if (!href) {
-          e.preventDefault();
-          onClick?.();
-        } else {
-          e.preventDefault();
-          onClick?.();
-        }
-      }}
-      className="font-medium text-gray-700 transition-colors hover:text-[#013756] hover:underline hover:underline-offset-4"
+    <button
+      onClick={onClick}
+      className={cn(
+        "relative text-sm font-medium transition-colors duration-200 pb-0.5",
+        active
+          ? "text-primary after:absolute after:bottom-0 after:left-0 after:h-0.5 after:w-full after:rounded-full after:bg-primary"
+          : "text-gray-600 hover:text-primary"
+      )}
     >
       {label}
-    </a>
+    </button>
   );
 }
 
 export function Header() {
-  const { navigate, view } = useNav();
+  const { navigate, view, homeAnchor } = useNav();
   const [mobileOpen, setMobileOpen] = useState(false);
 
   const go = (v: ViewKey, anchor?: string) => {
@@ -59,97 +45,94 @@ export function Header() {
     setMobileOpen(false);
   };
 
+  const isActive = (v: ViewKey, anchor?: string) => {
+    if (v !== view) return false;
+    if (anchor) return homeAnchor === anchor;
+    return !homeAnchor;
+  };
+
   return (
-    <header className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
+    <header className="sticky top-0 z-40 w-full border-b border-border/60 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/80 shadow-sm">
       <div className="container mx-auto flex h-16 items-center justify-between px-4">
         {/* Logo */}
-        <button
-          onClick={() => go("home")}
-          className="flex items-center gap-2"
-          aria-label="Yahya Hub home"
-        >
-          <img
-            src={LOGO_URL}
-            alt="Yahya Hub Logo"
-            width={40}
-            height={40}
-            className="h-10 w-10"
-          />
-          <span className="text-xl font-bold text-primary">Yahya Hub</span>
+        <button onClick={() => go("home")} className="flex items-center gap-2.5 shrink-0" aria-label="Yahya Hub home">
+          <img src={LOGO_URL} alt="Yahya Hub Logo" width={36} height={36} className="h-9 w-9" />
+          <span className="text-lg font-bold text-primary tracking-tight">Yahya Hub</span>
         </button>
 
         {/* Desktop nav */}
-        <nav className="hidden items-center space-x-6 md:flex">
-          <NavItem label="About Us" onClick={() => go("about")} />
-          <NavItem
-            label="Workspaces"
-            onClick={() => go("home", "workspaces")}
-          />
-          <NavItem label="Programs" onClick={() => go("home", "programs")} />
-          <NavItem label="Events" onClick={() => go("home", "events")} />
-
+        <nav className="hidden items-center gap-6 md:flex">
+          <NavLink label="About Us" active={isActive("about")} onClick={() => go("about")} />
+          <NavLink label="Workspaces" active={isActive("workspaces") || isActive("workspace-detail")} onClick={() => go("workspaces")} />
+          <NavLink label="Courses" active={isActive("courses") || isActive("course-detail")} onClick={() => go("courses")} />
+          <NavLink label="Events" active={isActive("events") || isActive("event-detail")} onClick={() => go("events")} />
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <button className="group flex items-center gap-1 font-medium text-gray-700 transition-colors hover:text-[#013756]">
-                Products
-                <ChevronDown className="h-4 w-4 transition-transform duration-200 group-data-[state=open]:rotate-180" />
+              <button className="group flex items-center gap-1 text-sm font-medium text-gray-600 transition-colors duration-200 hover:text-primary">
+                More
+                <ChevronDown className="h-3.5 w-3.5 transition-transform duration-200 group-data-[state=open]:rotate-180" />
               </button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-48">
-              <DropdownMenuItem onClick={() => go("yh-connect")}>
+            <DropdownMenuContent align="end" className="w-48 rounded-xl p-1.5 shadow-lg">
+              <DropdownMenuItem onClick={() => go("yh-connect")} className="flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm cursor-pointer">
+                <Zap className="h-4 w-4 text-secondary" />
                 YH Connect
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => go("blog")} className="flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm cursor-pointer">
+                Blog
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </nav>
 
+        {/* Desktop CTA */}
+        <div className="hidden items-center gap-3 md:flex">
+          <Button size="sm" onClick={() => go("workspaces")} className="h-9 rounded-full px-5 text-sm font-semibold shadow-sm">
+            Book a Space
+          </Button>
+        </div>
+
         {/* Mobile hamburger */}
         <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
           <SheetTrigger asChild>
-            <button
-              className="inline-flex items-center justify-center rounded-md p-2 text-gray-700 hover:bg-muted md:hidden"
-              aria-label="Open menu"
-            >
-              <Menu className="h-6 w-6" />
+            <button className="inline-flex items-center justify-center rounded-lg p-2 text-gray-600 hover:bg-muted transition-colors md:hidden" aria-label="Open menu">
+              <Menu className="h-5 w-5" />
             </button>
           </SheetTrigger>
-          <SheetContent side="right" className="w-80">
-            <SheetHeader>
+          <SheetContent side="right" className="w-80 p-0">
+            <SheetHeader className="p-6 pb-4 border-b">
               <SheetTitle className="flex items-center gap-2">
-                <img
-                  src={LOGO_URL}
-                  alt=""
-                  width={32}
-                  height={32}
-                  className="h-8 w-8"
-                />
-                <span className="text-lg font-bold text-primary">Yahya Hub</span>
+                <img src={LOGO_URL} alt="" width={28} height={28} className="h-7 w-7" />
+                <span className="text-base font-bold text-primary">Yahya Hub</span>
               </SheetTitle>
             </SheetHeader>
-            <ul className="mt-6 space-y-1">
+            <div className="p-4 space-y-1">
               {[
                 { label: "About Us", v: "about" as ViewKey },
-                {
-                  label: "Workspaces",
-                  v: "home" as ViewKey,
-                  anchor: "workspaces",
-                },
-                { label: "Programs", v: "home" as ViewKey, anchor: "programs" },
-                { label: "Events", v: "home" as ViewKey, anchor: "events" },
-                { label: "Products", v: "products" as ViewKey },
+                { label: "Workspaces", v: "workspaces" as ViewKey },
+                { label: "Courses", v: "courses" as ViewKey },
+                { label: "Events", v: "events" as ViewKey },
                 { label: "YH Connect", v: "yh-connect" as ViewKey },
+                { label: "Blog", v: "blog" as ViewKey },
               ].map((item) => (
-                <li key={item.label}>
-                  <button
-                    onClick={() => go(item.v, item.anchor)}
-                    className="flex w-full items-center justify-between rounded-md px-3 py-2 text-left text-sm font-medium text-gray-700 transition-colors hover:bg-muted hover:text-[#013756]"
-                  >
-                    {item.label}
-                    <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                  </button>
-                </li>
+                <button
+                  key={item.label}
+                  onClick={() => go(item.v)}
+                  className={cn(
+                    "flex w-full items-center justify-between rounded-xl px-4 py-3 text-left text-sm font-medium transition-colors",
+                    view === item.v ? "bg-primary/10 text-primary" : "text-gray-700 hover:bg-muted hover:text-primary"
+                  )}
+                >
+                  {item.label}
+                  <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                </button>
               ))}
-            </ul>
+            </div>
+            <div className="px-4 pt-2">
+              <Button className="w-full rounded-xl" onClick={() => go("workspaces")}>
+                Book a Space
+              </Button>
+            </div>
           </SheetContent>
         </Sheet>
       </div>

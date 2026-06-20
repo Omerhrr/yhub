@@ -5,26 +5,26 @@ import { create } from "zustand";
 export type ViewKey =
   | "home"
   | "about"
-  | "programs"
+  | "workspaces"
+  | "workspace-detail"
+  | "courses"
+  | "course-detail"
   | "events"
+  | "event-detail"
+  | "programs"        // legacy alias → redirects to courses
   | "blog"
   | "privacy"
   | "terms"
-  | "products"
   | "yh-connect"
   | "admin-login"
   | "admin-dashboard"
-  | "client-login"
-  | "client-register"
-  | "client-dashboard"
-  | "talent-login"
-  | "talent-register"
-  | "talent-dashboard"
+  | "track-ticket"
   | "not-found";
 
 type ModalState =
   | { kind: "none" }
   | { kind: "booking"; workspaceId: string }
+  | { kind: "check-availability"; workspaceId: string }
   | { kind: "view-space"; workspaceId: string }
   | { kind: "amenities"; workspaceId: string }
   | { kind: "enroll"; programId: string }
@@ -33,43 +33,39 @@ type ModalState =
 
 type NavState = {
   view: ViewKey;
-  // hash anchor on home page (#workspaces / #programs / #events)
   homeAnchor?: string;
-  // simple auth (mock — no backend)
+  selectedId?: string;
   adminAuthed: boolean;
-  clientAuthed: boolean;
-  talentAuthed: boolean;
   modal: ModalState;
 
   navigate: (view: ViewKey, anchor?: string) => void;
+  navigateToDetail: (view: ViewKey, id: string) => void;
   openModal: (m: ModalState) => void;
   closeModal: () => void;
-  setAuth: (role: "admin" | "client" | "talent", value: boolean) => void;
+  setAuth: (role: "admin", value: boolean) => void;
 };
 
 export const useNav = create<NavState>((set) => ({
   view: "home",
   homeAnchor: undefined,
+  selectedId: undefined,
   adminAuthed: false,
-  clientAuthed: false,
-  talentAuthed: false,
   modal: { kind: "none" },
 
   navigate: (view, anchor) => {
-    set({ view, homeAnchor: anchor });
-    // scroll to top on view change (or to anchor after render)
+    const resolved: ViewKey = view === "programs" ? "courses" : view;
+    set({ view: resolved, homeAnchor: anchor, selectedId: undefined });
+    if (typeof window !== "undefined") {
+      window.scrollTo({ top: 0, behavior: "auto" });
+    }
+  },
+  navigateToDetail: (view, id) => {
+    set({ view, selectedId: id, homeAnchor: undefined });
     if (typeof window !== "undefined") {
       window.scrollTo({ top: 0, behavior: "auto" });
     }
   },
   openModal: (m) => set({ modal: m }),
   closeModal: () => set({ modal: { kind: "none" } }),
-  setAuth: (role, value) =>
-    set(
-      role === "admin"
-        ? { adminAuthed: value }
-        : role === "client"
-        ? { clientAuthed: value }
-        : { talentAuthed: value }
-    ),
+  setAuth: (_role, value) => set({ adminAuthed: value }),
 }));

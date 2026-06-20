@@ -39,6 +39,7 @@ export type Workspace = {
   dailyRate: number;
   imageUrl: string;
   bookingEnabled: boolean;
+  order?: number;
 };
 
 export const workspaces: Workspace[] = [
@@ -165,6 +166,8 @@ export type Program = {
   cohort?: string;
   type?: string;
   enrollable: boolean;
+  imageUrl?: string;
+  order?: number;
 };
 
 export const upcomingPrograms: Program[] = [
@@ -259,7 +262,7 @@ export type EventItem = {
   description: string;
   longWriteUp?: string;
   category: string;
-  mode: "Online" | "Physical";
+  mode: "Online" | "Physical" | "Webinar";
   isMostRecent?: boolean;
   status: "ongoing" | "upcoming" | "past";
   date: string;
@@ -268,7 +271,11 @@ export type EventItem = {
   audience: string;
   fee: number;
   instagramUrl: string;
+  imageUrl?: string;
+  videoUrl?: string;
   bookable: boolean;
+  list?: "home" | "past";
+  order?: number;
 };
 
 export const homeEvents: EventItem[] = [

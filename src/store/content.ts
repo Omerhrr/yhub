@@ -43,10 +43,42 @@ export type StatusCardData = {
   order: number;
 };
 
+export type AboutStat = { value: string; label: string };
+export type AboutTimelineItem = { year: string; title: string; desc: string };
+export type AboutValue = { title: string; desc: string; icon: string; color: string };
+
+export type AboutConfig = {
+  heroTitle: string;
+  heroHighlight: string;
+  heroSubtitle: string;
+  heroLocation: string;
+  heroCtaPrimary: string;
+  heroCtaSecondary: string;
+  stats: AboutStat[];
+  missionText: string;
+  missionSub: string;
+  missionTags: string[];
+  visionText: string;
+  visionSub: string;
+  visionTags: string[];
+  timeline: AboutTimelineItem[];
+  values: AboutValue[];
+  visitTitle: string;
+  visitSubtitle: string;
+  visitHours: string;
+  visitFeatures: string[];
+  address: string;
+  ctaTitle: string;
+  ctaSub: string;
+  ctaCtaPrimary: string;
+  ctaCtaSecondary: string;
+};
+
 type ContentState = {
   // Data
   home: HomeContent | null;
   footer: FooterContent | null;
+  aboutConfig: AboutConfig | null;
   statusCards: StatusCardData[];
   workspaces: Workspace[];
   upcomingPrograms: Program[];
@@ -67,6 +99,7 @@ type ContentState = {
 export const useContent = create<ContentState>((set, get) => ({
   home: null,
   footer: null,
+  aboutConfig: null,
   statusCards: defaultStatusCards,
   workspaces: defaultWorkspaces,
   upcomingPrograms: defaultUpcomingPrograms,
@@ -88,6 +121,7 @@ export const useContent = create<ContentState>((set, get) => ({
       set({
         home: data.home ?? null,
         footer: data.footer ?? null,
+        aboutConfig: data.aboutConfig ?? null,
         statusCards: data.statusCards?.length
           ? data.statusCards
           : get().statusCards,
@@ -114,7 +148,6 @@ export const useContent = create<ContentState>((set, get) => ({
         loading: false,
         error: e instanceof Error ? e.message : "Failed to fetch content",
       });
-      // Don't reset data — keep the defaults / previous data
     }
   },
 

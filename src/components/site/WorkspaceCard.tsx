@@ -1,120 +1,119 @@
 "use client";
 
 import {
-  Image as ImageIcon,
-  Armchair,
-  LampDesk,
-  Sofa,
-  Tv,
-  Projector,
-  Presentation,
-  type LucideIcon,
+  Armchair, LampDesk, Sofa, Tv, Projector, Presentation, Eye, type LucideIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { StarRating } from "./StarRating";
 import { useNav } from "@/store/nav";
-import {
-  formatNaira,
-  type Workspace,
-  type Amenity,
-} from "@/data/content";
+import { formatNaira, type Workspace, type Amenity } from "@/data/content";
 import { cn } from "@/lib/utils";
 
 const AMENITY_ICONS: Record<string, LucideIcon> = {
-  armchair: Armchair,
-  desk: LampDesk,
-  sofa: Sofa,
-  tv: Tv,
-  projector: Projector,
-  whiteboard: Presentation,
+  armchair: Armchair, desk: LampDesk, sofa: Sofa, tv: Tv, projector: Projector, whiteboard: Presentation,
 };
 
 export function AmenityChip({ amenity }: { amenity: Amenity }) {
   const Icon = AMENITY_ICONS[amenity.icon] ?? Armchair;
   return (
-    <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-      <Icon className="h-4 w-4 text-primary" />
+    <div className="flex items-center gap-1.5 rounded-full bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground">
+      <Icon className="h-3.5 w-3.5 text-primary" />
       <span>{amenity.label}</span>
     </div>
   );
 }
 
-export function WorkspaceCard({ workspace }: { workspace: Workspace }) {
+export function WorkspaceCard({
+  workspace,
+  onViewDetail,
+}: {
+  workspace: Workspace;
+  onViewDetail?: () => void;
+}) {
   const { openModal } = useNav();
-  const visibleAmenities = workspace.amenities.slice(0, 2);
-  const hiddenCount = workspace.amenities.length - 2;
+  const visibleAmenities = workspace.amenities.slice(0, 3);
+  const hiddenCount = workspace.amenities.length - 3;
 
   return (
-    <Card className="flex flex-col">
-      <div className="flex flex-col space-y-3 p-6">
-        <div className="flex items-start justify-between">
-          <div className="tracking-tight text-xl font-semibold text-foreground">
-            {workspace.name}
+    <Card
+      className="group flex flex-col overflow-hidden border-border/60 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:shadow-primary/10 cursor-pointer"
+      onClick={onViewDetail}
+    >
+      {/* Image */}
+      <div className="relative h-44 overflow-hidden bg-muted">
+        <img
+          src={workspace.imageUrl}
+          alt={workspace.name}
+          className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+        />
+        <div className="absolute inset-0 flex items-center justify-center bg-primary/0 transition-colors duration-300 group-hover:bg-primary/30">
+          <div className="flex items-center gap-2 rounded-full bg-white px-4 py-2 text-xs font-semibold text-primary opacity-0 shadow-md transition-opacity duration-300 group-hover:opacity-100">
+            <Eye className="h-3.5 w-3.5" />
+            View Details
           </div>
-          <Button
-            variant="outline"
-            size="sm"
-            className="shrink-0"
-            onClick={() => openModal({ kind: "view-space", workspaceId: workspace.id })}
-          >
-            <ImageIcon className="mr-1 h-4 w-4" />
-            View Space
-          </Button>
         </div>
-        <div className="line-clamp-2 text-sm text-foreground">
-          {workspace.description}
-        </div>
+        {!workspace.bookingEnabled && (
+          <div className="absolute right-3 top-3 rounded-full bg-black/60 px-2.5 py-1 text-xs font-medium text-white backdrop-blur-sm">
+            Coming Soon
+          </div>
+        )}
       </div>
 
-      <div className="px-6 pb-3 flex-grow space-y-3">
-        <StarRating
-          rating={workspace.rating}
-          reviewCount={workspace.reviewCount}
-        />
-        <div className="flex flex-wrap items-center gap-3">
+      {/* Body */}
+      <div className="flex flex-1 flex-col p-5">
+        <div className="flex items-start justify-between gap-2">
+          <h3 className="text-lg font-semibold tracking-tight text-foreground">{workspace.name}</h3>
+          <StarRating rating={workspace.rating} reviewCount={workspace.reviewCount} />
+        </div>
+
+        <p className="mt-2 line-clamp-2 text-sm text-muted-foreground">{workspace.description}</p>
+
+        <div className="mt-3 flex flex-wrap gap-1.5">
           {visibleAmenities.map((a, i) => (
             <AmenityChip key={i} amenity={a} />
           ))}
           {hiddenCount > 0 && (
             <button
-              onClick={() =>
-                openModal({ kind: "amenities", workspaceId: workspace.id })
-              }
-              className="text-xs font-medium text-primary hover:underline"
+              onClick={(e) => { e.stopPropagation(); openModal({ kind: "amenities", workspaceId: workspace.id }); }}
+              className="rounded-full bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary hover:bg-primary/20 transition-colors"
             >
               +{hiddenCount} more
             </button>
           )}
         </div>
-      </div>
 
-      <div className="px-6 pb-4">
-        <div className="shrink-0 bg-border h-[1px] w-full" />
-      </div>
+        <div className="my-4 h-px w-full bg-border" />
 
-      <div className="flex items-center justify-between p-6 pt-0 mt-auto">
-        <div>
-          <p className="text-xl font-bold text-foreground">
-            {formatNaira(workspace.hourlyRate)}{" "}
-            <span className="text-sm font-normal text-muted-foreground">
-              /hour
-            </span>
-          </p>
-          <p className="text-sm text-muted-foreground">
-            {formatNaira(workspace.dailyRate)}{" "}
-            <span className="text-xs">/day</span>
-          </p>
+        <div className="mt-auto space-y-2">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-lg font-bold text-foreground">
+                {formatNaira(workspace.hourlyRate)}{" "}
+                <span className="text-xs font-normal text-muted-foreground">/hr</span>
+              </p>
+              <p className="text-xs text-muted-foreground">
+                {formatNaira(workspace.dailyRate)} <span>/day</span>
+              </p>
+            </div>
+            <Button
+              size="sm"
+              disabled={!workspace.bookingEnabled}
+              onClick={(e) => { e.stopPropagation(); openModal({ kind: "booking", workspaceId: workspace.id }); }}
+              className={cn("rounded-full px-5", !workspace.bookingEnabled && "cursor-not-allowed opacity-50")}
+            >
+              {workspace.bookingEnabled ? "Book Now" : "Unavailable"}
+            </Button>
+          </div>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={(e) => { e.stopPropagation(); openModal({ kind: "check-availability", workspaceId: workspace.id }); }}
+            className="w-full rounded-full border-emerald-300 text-emerald-700 hover:bg-emerald-50 hover:border-emerald-400"
+          >
+            Check Availability
+          </Button>
         </div>
-        <Button
-          disabled={!workspace.bookingEnabled}
-          onClick={() =>
-            openModal({ kind: "booking", workspaceId: workspace.id })
-          }
-          className={cn(!workspace.bookingEnabled && "cursor-not-allowed opacity-60")}
-        >
-          Check Availability
-        </Button>
       </div>
     </Card>
   );

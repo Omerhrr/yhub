@@ -34,18 +34,12 @@ export async function POST(req: NextRequest, { params }: Params) {
   const now      = new Date();
 
   try {
-    const rows = await db.$queryRaw<{
-      id: string; title: string; date: string; time: string;
-      location: string; category: string; mode: string; fee: number;
-    }[]>`SELECT id,title,date,time,location,category,mode,fee FROM events WHERE id = ${id} LIMIT 1`;
-
-    const event = rows[0];
+    // Use Prisma ORM — handles column name quoting automatically
+    const event = await db.eventItem.findUnique({ where: { id } });
     if (!event) return NextResponse.json({ error: "Event not found" }, { status: 404 });
 
-    // ── Amount from DB — never trust client ───────────────────────────────
     const amount = Number(event.fee) || 0;
 
-    // ── Paystack verification (if paid) ──────────────────────────────────
     if (amount > 0) {
       if (!paystackRef)
         return NextResponse.json({ error: "Payment reference required" }, { status: 400 });
@@ -54,27 +48,34 @@ export async function POST(req: NextRequest, { params }: Params) {
         return NextResponse.json({ error: "Payment could not be verified. Contact support." }, { status: 402 });
     }
 
-    // ── Duplicate registration check ──────────────────────────────────────
-    const existing = await db.$queryRaw<{ id: string; ticketId: string }[]>`
-      SELECT id, ticketId FROM event_registrations
-      WHERE eventId = ${id} AND email = ${email}
-      LIMIT 1
-    `.catch(() => []);
+    // Duplicate registration check
+    const existing = await db.eventRegistration.findFirst({
+      where: { eventId: id, email },
+      select: { id: true, ticketId: true },
+    }).catch(() => null);
 
-    if (existing.length) {
+    if (existing) {
       return NextResponse.json(
-        { error: "You are already registered for this event.", ticketId: existing[0].ticketId },
+        { error: "You are already registered for this event.", ticketId: existing.ticketId },
         { status: 409 },
       );
     }
 
-    await db.$executeRaw`
-      INSERT INTO event_registrations
-        (id, eventId, ticketId, name, email, phone, gender, amount, paystackRef, status, createdAt)
-      VALUES
-        (${regId}, ${id}, ${ticketId}, ${name}, ${email}, ${phone},
-         ${gender ?? null}, ${amount}, ${paystackRef ?? null}, 'confirmed', ${now})
-    `;
+    await db.eventRegistration.create({
+      data: {
+        id: regId,
+        eventId: id,
+        ticketId,
+        name,
+        email,
+        phone,
+        gender: gender ?? null,
+        amount,
+        paystackRef: paystackRef ?? null,
+        status: "confirmed",
+        createdAt: now,
+      },
+    });
 
     const locationLabel = event.mode === "Webinar"
       ? "Online (link will be sent separately)"

@@ -8,7 +8,6 @@ export async function GET(req: NextRequest, { params }: Params) {
   const { id } = await params;
   const now = new Date();
 
-  // Clamp year/month to prevent NaN or garbage monthStr in queries
   const rawYear  = parseInt(req.nextUrl.searchParams.get("year")  ?? "", 10);
   const rawMonth = parseInt(req.nextUrl.searchParams.get("month") ?? "", 10);
   const year  = Number.isFinite(rawYear)  ? Math.max(2020, Math.min(2100, rawYear))  : now.getFullYear();
@@ -16,25 +15,23 @@ export async function GET(req: NextRequest, { params }: Params) {
 
   let cfg = { ...DEFAULT_CONFIG };
   try {
-    const rows = await db.$queryRaw<Record<string, unknown>[]>`
-      SELECT * FROM workspace_availability WHERE workspaceId = ${id}
-    `;
-    if (rows.length) cfg = {
-      availableDays: JSON.parse(rows[0].availableDays as string),
-      openTime:      rows[0].openTime as string,
-      closeTime:     rows[0].closeTime as string,
-      slotDuration:  rows[0].slotDuration as number,
-      blackoutDates: JSON.parse(rows[0].blackoutDates as string),
+    const avail = await db.workspaceAvailability.findUnique({ where: { workspaceId: id } });
+    if (avail) cfg = {
+      availableDays: JSON.parse(avail.availableDays),
+      openTime:      avail.openTime,
+      closeTime:     avail.closeTime,
+      slotDuration:  avail.slotDuration,
+      blackoutDates: JSON.parse(avail.blackoutDates),
     };
   } catch { /* use default config */ }
 
   const monthStr = `${year}-${String(month).padStart(2, "0")}`;
   let bookings: { date: string; startTime: string; endTime: string }[] = [];
   try {
-    bookings = await db.$queryRaw<{ date: string; startTime: string; endTime: string }[]>`
-      SELECT date, startTime, endTime FROM workspace_bookings
-      WHERE workspaceId = ${id} AND date LIKE ${monthStr + "-%"}
-    `;
+    bookings = await db.workspaceBooking.findMany({
+      where: { workspaceId: id, date: { startsWith: monthStr } },
+      select: { date: true, startTime: true, endTime: true },
+    });
   } catch { /* table may not exist yet */ }
 
   const daysInMonth = new Date(year, month, 0).getDate();
@@ -53,9 +50,9 @@ export async function GET(req: NextRequest, { params }: Params) {
     const allSlots    = generateSlots(cfg.openTime, cfg.closeTime, cfg.slotDuration);
     const bookedCount = allSlots.filter(t => isSlotBooked(t, cfg.slotDuration, dayBookings)).length;
 
-    if (bookedCount === 0)              days[dateStr] = "available";
+    if (bookedCount === 0)                    days[dateStr] = "available";
     else if (bookedCount === allSlots.length) days[dateStr] = "full";
-    else                                days[dateStr] = "partial";
+    else                                      days[dateStr] = "partial";
   }
 
   return NextResponse.json({ year, month, config: cfg, days });

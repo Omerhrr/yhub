@@ -10,100 +10,86 @@ export async function GET(req: NextRequest) {
 
   try {
     // Course enrollment
-    const courseRows = await db.$queryRaw<Record<string, unknown>[]>`
-      SELECT e.*, p.name AS programName, p.category, p.duration, p.cohort
-      FROM course_enrollments e
-      LEFT JOIN programs p ON p.id = e.programId
-      WHERE e.ticketId = ${ticketId}
-      LIMIT 1
-    `.catch(() => []);
+    const enrollment = await db.courseEnrollment.findUnique({
+      where: { ticketId },
+    }).catch(() => null);
 
-    if (courseRows.length) {
-      const r = courseRows[0];
+    if (enrollment) {
+      const program = await db.program.findUnique({ where: { id: enrollment.programId } }).catch(() => null);
       return NextResponse.json({
         found:     true,
         type:      "course",
         ticketId,
-        title:     r.programName ?? "Course",
-        name:      r.name,
-        email:     maskEmail(String(r.email)),
-        date:      r.cohort ?? "See schedule",
-        time:      r.duration,
+        title:     program?.name ?? "Course",
+        name:      enrollment.name,
+        email:     maskEmail(enrollment.email),
+        date:      program?.cohort ?? "See schedule",
+        time:      program?.duration,
         location:  "Yahya Hub, Abuja, Nigeria",
-        amount:    r.amount ?? 0,
-        status:    r.status ?? "confirmed",
+        amount:    enrollment.amount ?? 0,
+        status:    enrollment.status ?? "confirmed",
         extra: [
-          { label: "Category", value: r.category },
-          { label: "Duration", value: r.duration },
+          { label: "Category", value: program?.category },
+          { label: "Duration", value: program?.duration },
         ].filter(x => x.value),
       });
     }
 
     // Event registration
-    const eventRows = await db.$queryRaw<Record<string, unknown>[]>`
-      SELECT er.*, e.title AS eventTitle, e.date AS eventDate,
-             e.time AS eventTime, e.location AS eventLocation,
-             e.category, e.mode
-      FROM event_registrations er
-      LEFT JOIN events e ON e.id = er.eventId
-      WHERE er.ticketId = ${ticketId}
-      LIMIT 1
-    `.catch(() => []);
+    const registration = await db.eventRegistration.findUnique({
+      where: { ticketId },
+    }).catch(() => null);
 
-    if (eventRows.length) {
-      const r = eventRows[0];
-      const location = r.mode === "Webinar"
+    if (registration) {
+      const event = await db.eventItem.findUnique({ where: { id: registration.eventId } }).catch(() => null);
+      const location = event?.mode === "Webinar"
         ? "Online (Webinar)"
-        : (r.eventLocation ?? "Yahya Hub, Abuja, Nigeria");
+        : (event?.location ?? "Yahya Hub, Abuja, Nigeria");
       return NextResponse.json({
         found:     true,
         type:      "event",
         ticketId,
-        title:     r.eventTitle ?? "Event",
-        name:      r.name,
-        email:     maskEmail(String(r.email)),
-        date:      r.eventDate,
-        time:      r.eventTime,
+        title:     event?.title ?? "Event",
+        name:      registration.name,
+        email:     maskEmail(registration.email),
+        date:      event?.date,
+        time:      event?.time,
         location,
-        amount:    r.amount ?? 0,
-        status:    r.status ?? "confirmed",
+        amount:    registration.amount ?? 0,
+        status:    registration.status ?? "confirmed",
         extra: [
-          { label: "Category", value: r.category },
-          { label: "Mode",     value: r.mode },
+          { label: "Category", value: event?.category },
+          { label: "Mode",     value: event?.mode },
         ].filter(x => x.value),
       });
     }
 
     // Workspace booking
-    const wsRows = await db.$queryRaw<Record<string, unknown>[]>`
-      SELECT b.*, w.name AS workspaceName
-      FROM workspace_bookings b
-      LEFT JOIN workspaces w ON w.id = b.workspaceId
-      WHERE b.ticketId = ${ticketId}
-      LIMIT 1
-    `.catch(() => []);
+    const booking = await db.workspaceBooking.findUnique({
+      where: { ticketId },
+    }).catch(() => null);
 
-    if (wsRows.length) {
-      const r = wsRows[0];
-      const bkType = String(r.type ?? r.bookingType ?? "hourly");
+    if (booking) {
+      const workspace = await db.workspace.findUnique({ where: { id: booking.workspaceId } }).catch(() => null);
+      const bkType = booking.type ?? "hourly";
       const timeLabel = bkType === "daily"
         ? "Full day (09:00 - 20:00)"
-        : `${r.startTime} - ${r.endTime}`;
+        : `${booking.startTime} - ${booking.endTime}`;
       return NextResponse.json({
         found:     true,
         type:      "workspace",
         ticketId,
-        title:     r.workspaceName ?? "Workspace",
-        name:      r.name,
-        email:     maskEmail(String(r.email)),
-        date:      r.date,
+        title:     workspace?.name ?? "Workspace",
+        name:      booking.name,
+        email:     maskEmail(booking.email),
+        date:      booking.date,
         time:      timeLabel,
         location:  "Yahya Hub, Abuja, Nigeria",
-        amount:    r.amount ?? 0,
-        status:    String(r.status ?? "confirmed"),
+        amount:    booking.amount ?? 0,
+        status:    booking.status ?? "confirmed",
         extra: [
           { label: "Booking Type", value: bkType === "daily" ? "Full Day" : "Hourly" },
-          { label: "Purpose",      value: r.notes ?? r.reason },
+          { label: "Purpose",      value: booking.notes },
         ].filter(x => x.value),
       });
     }

@@ -13,16 +13,14 @@ export async function GET(req: NextRequest, { params }: Params) {
 
   let cfg = { ...DEFAULT_CONFIG };
   try {
-    const rows = await db.$queryRaw<Record<string, unknown>[]>`
-      SELECT * FROM workspace_availability WHERE workspaceId = ${id}
-    `;
-    if (rows.length) {
+    const avail = await db.workspaceAvailability.findUnique({ where: { workspaceId: id } });
+    if (avail) {
       cfg = {
-        availableDays: JSON.parse(rows[0].availableDays as string),
-        openTime: rows[0].openTime as string,
-        closeTime: rows[0].closeTime as string,
-        slotDuration: rows[0].slotDuration as number,
-        blackoutDates: JSON.parse(rows[0].blackoutDates as string),
+        availableDays: JSON.parse(avail.availableDays),
+        openTime:      avail.openTime,
+        closeTime:     avail.closeTime,
+        slotDuration:  avail.slotDuration,
+        blackoutDates: JSON.parse(avail.blackoutDates),
       };
     }
   } catch { /* use default */ }
@@ -38,10 +36,11 @@ export async function GET(req: NextRequest, { params }: Params) {
 
   let bookings: { startTime: string; endTime: string }[] = [];
   try {
-    bookings = await db.$queryRaw<{ startTime: string; endTime: string }[]>`
-      SELECT startTime, endTime FROM workspace_bookings WHERE workspaceId=${id} AND date=${date}
-    `;
-  } catch { /* no bookings table yet */ }
+    bookings = await db.workspaceBooking.findMany({
+      where: { workspaceId: id, date },
+      select: { startTime: true, endTime: true },
+    });
+  } catch { /* no bookings yet */ }
 
   const slotTimes = generateSlots(cfg.openTime, cfg.closeTime, cfg.slotDuration);
   const slots = slotTimes.map(time => ({
@@ -49,6 +48,5 @@ export async function GET(req: NextRequest, { params }: Params) {
     status: isSlotBooked(time, cfg.slotDuration, bookings) ? "booked" : "available",
   }));
 
-  
   return NextResponse.json({ date, config: cfg, dayAvailable: true, slots });
 }

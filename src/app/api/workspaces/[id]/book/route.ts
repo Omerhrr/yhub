@@ -3,7 +3,6 @@ import { db } from "@/lib/db";
 import { generateTicketId, buildTicketEmail } from "@/lib/ticket";
 import { sendEmail } from "@/lib/email";
 import { verifyPaystackPayment } from "@/lib/paystack";
-import { DEFAULT_CONFIG } from "@/lib/slots";
 
 function isValidEmail(e: string) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e);
@@ -58,12 +57,8 @@ export async function POST(req: NextRequest, { params }: Params) {
       amount = ws.dailyRate ?? 0;
     } else {
       // Calculate slot count from server's own config
-      const cfgRows = await db.$queryRaw<Record<string, unknown>[]>`
-        SELECT slotDuration FROM workspace_availability WHERE workspaceId = ${id}
-      `.catch(() => []);
-      const slotDuration = cfgRows.length
-        ? Number(cfgRows[0].slotDuration)
-        : DEFAULT_CONFIG.slotDuration;
+      const avail = await db.workspaceAvailability.findUnique({ where: { workspaceId: id } }).catch(() => null);
+      const slotDuration = avail?.slotDuration ?? DEFAULT_CONFIG.slotDuration;
 
       if (startTime && endTime) {
         const toMin = (t: string) => { const [h, m] = t.split(":").map(Number); return h * 60 + m; };
@@ -83,10 +78,10 @@ export async function POST(req: NextRequest, { params }: Params) {
 
     // ── Double-booking check ──────────────────────────────────────────────
     if (bookingType !== "daily" && startTime && endTime) {
-      const existing = await db.$queryRaw<{ startTime: string; endTime: string }[]>`
-        SELECT startTime, endTime FROM workspace_bookings
-        WHERE workspaceId = ${id} AND date = ${date}
-      `.catch(() => [] as { startTime: string; endTime: string }[]);
+      const existing = await db.workspaceBooking.findMany({
+        where: { workspaceId: id, date },
+        select: { startTime: true, endTime: true },
+      }).catch(() => [] as { startTime: string; endTime: string }[]);
 
       const toMin = (t: string) => { const [h, m] = t.split(":").map(Number); return h * 60 + m; };
       const newS = toMin(startTime), newE = toMin(endTime);
@@ -98,15 +93,23 @@ export async function POST(req: NextRequest, { params }: Params) {
         return NextResponse.json({ error: "This time slot is no longer available" }, { status: 409 });
     }
 
-    const createdAt = new Date();
-    await db.$executeRaw`
-      INSERT INTO workspace_bookings
-        (id, workspaceId, ticketId, date, startTime, endTime, type, name, email, phone, notes, amount, status, createdAt)
-      VALUES
-        (${bookingId}, ${id}, ${ticketId}, ${date},
-         ${startTime ?? "09:00"}, ${endTime ?? "20:00"},
-         ${bookingType ?? "hourly"}, ${name}, ${email}, ${phone}, ${reason}, ${amount}, 'confirmed', ${createdAt})
-    `;
+    await db.workspaceBooking.create({
+      data: {
+        id: bookingId,
+        workspaceId: id,
+        ticketId,
+        date,
+        startTime: startTime ?? "09:00",
+        endTime:   endTime   ?? "20:00",
+        type:      bookingType ?? "hourly",
+        name,
+        email,
+        phone,
+        notes:  reason,
+        amount,
+        status: "confirmed",
+      },
+    });
 
     const timeLabel = bookingType === "daily"
       ? "Full day (09:00 – 20:00)"

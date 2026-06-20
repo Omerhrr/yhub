@@ -37,10 +37,8 @@ export async function POST(req: NextRequest, { params }: Params) {
     const program = await db.program.findUnique({ where: { id } });
     if (!program) return NextResponse.json({ error: "Program not found" }, { status: 404 });
 
-    // ── Amount from DB — never trust client ───────────────────────────────
     const amount = program.price ?? 0;
 
-    // ── Paystack verification (if paid) ──────────────────────────────────
     if (amount > 0) {
       if (!paystackRef)
         return NextResponse.json({ error: "Payment reference required" }, { status: 400 });
@@ -49,28 +47,35 @@ export async function POST(req: NextRequest, { params }: Params) {
         return NextResponse.json({ error: "Payment could not be verified. Contact support." }, { status: 402 });
     }
 
-    // ── Duplicate enrollment check ────────────────────────────────────────
-    const existing = await db.$queryRaw<{ id: string; ticketId: string }[]>`
-      SELECT id, ticketId FROM course_enrollments
-      WHERE programId = ${id} AND email = ${email}
-      LIMIT 1
-    `.catch(() => []);
+    // Duplicate enrollment check
+    const existing = await db.courseEnrollment.findFirst({
+      where: { programId: id, email },
+      select: { id: true, ticketId: true },
+    }).catch(() => null);
 
-    if (existing.length) {
+    if (existing) {
       return NextResponse.json(
-        { error: "You are already enrolled in this program.", ticketId: existing[0].ticketId },
+        { error: "You are already enrolled in this program.", ticketId: existing.ticketId },
         { status: 409 },
       );
     }
 
-    await db.$executeRaw`
-      INSERT INTO course_enrollments
-        (id, programId, ticketId, name, email, phone, gender, education, amount, paystackRef, status, createdAt)
-      VALUES
-        (${enrollmentId}, ${id}, ${ticketId}, ${name}, ${email}, ${phone},
-         ${gender ?? null}, ${education ?? null}, ${amount},
-         ${paystackRef ?? null}, 'confirmed', ${now})
-    `;
+    await db.courseEnrollment.create({
+      data: {
+        id: enrollmentId,
+        programId: id,
+        ticketId,
+        name,
+        email,
+        phone,
+        gender: gender ?? null,
+        education: education ?? null,
+        amount,
+        paystackRef: paystackRef ?? null,
+        status: "confirmed",
+        createdAt: now,
+      },
+    });
 
     sendEmail({
       to:      email,

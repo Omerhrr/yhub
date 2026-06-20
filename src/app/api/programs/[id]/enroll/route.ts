@@ -31,7 +31,7 @@ export async function POST(req: NextRequest, { params }: Params) {
 
   const enrollmentId = crypto.randomUUID();
   const ticketId     = generateTicketId("CS");
-  const now          = new Date().toISOString();
+  const now          = new Date();
 
   try {
     const program = await db.program.findUnique({ where: { id } });

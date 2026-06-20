@@ -1,32 +1,27 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "sqlite"
-  // Locally: file:./db/custom.db (default for dev)
-  // On Railway: set DATABASE_URL=file:/app/db/custom.db in environment variables
-  // and mount a persistent volume at /app/db so data survives deploys.
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
-// Singleton row holding the home page hero content
 model HomeContent {
-  id                    String   @id @default("home")
-  heroTitle             String   @default("Welcome to Yahya Hub")
-  heroSubtitle          String   @default("A vibrant space for ideas, creativity, and collaboration. We offer coworking spaces, run skill-building programs, and host events that inspire innovation across every field.")
-  heroCtaPrimaryText    String   @default("Explore Workspaces")
-  heroCtaPrimaryAnchor  String   @default("workspaces")
-  heroCtaSecondaryText  String   @default("Our Programs")
-  heroCtaSecondaryAnchor String  @default("programs")
-  heroVideoUrl          String   @default("https://firebasestorage.googleapis.com/v0/b/yahyahub-e7643.firebasestorage.app/o/bookings-n-products%2Fhero%2Fvideo%2Fyahya_hub_commercial.mp4?alt=media&token=24f59eeb-8203-4a75-8763-0c1d4454b9b7")
-  updatedAt             DateTime @updatedAt
+  id                     String   @id @default("home")
+  heroTitle              String   @default("Welcome to Yahya Hub")
+  heroSubtitle           String   @default("A vibrant space for ideas, creativity, and collaboration. We offer coworking spaces, run skill-building programs, and host events that inspire innovation across every field.")
+  heroCtaPrimaryText     String   @default("Explore Workspaces")
+  heroCtaPrimaryAnchor   String   @default("workspaces")
+  heroCtaSecondaryText   String   @default("Our Programs")
+  heroCtaSecondaryAnchor String   @default("programs")
+  heroVideoUrl           String   @default("https://firebasestorage.googleapis.com/v0/b/yahyahub-e7643.firebasestorage.app/o/bookings-n-products%2Fhero%2Fvideo%2Fyahya_hub_commercial.mp4?alt=media&token=24f59eeb-8203-4a75-8763-0c1d4454b9b7")
+  updatedAt              DateTime @updatedAt
+
+  @@map("home_content")
 }
 
-// Singleton row holding footer contact + social links
 model FooterContent {
   id        String   @id @default("footer")
   email     String   @default("yahyahub6@gmail.com")
@@ -35,15 +30,16 @@ model FooterContent {
   twitter   String   @default("https://x.com/YahyaHub")
   linkedin  String   @default("https://www.linkedin.com/company/yahyahub/posts")
   updatedAt DateTime @updatedAt
+
+  @@map("footer_content")
 }
 
-// The 4 status cards on the home hero
 model StatusCard {
   id           String @id @default(cuid())
   title        String
-  icon         String // lucide icon name: signal | zap | thermometer | briefcase-business
+  icon         String
   badgeLabel   String
-  badgeVariant String @default("green") // green | yellow
+  badgeVariant String @default("green")
   primary      String
   secondary    String
   order        Int    @default(0)
@@ -61,8 +57,10 @@ model Workspace {
   dailyRate      Int     @default(0)
   imageUrl       String
   bookingEnabled Boolean @default(true)
-  amenities      String  @default("[]") // JSON array of {icon, label}
+  amenities      String  @default("[]")
   order          Int     @default(0)
+
+  @@map("workspaces")
 }
 
 model Program {
@@ -72,12 +70,14 @@ model Program {
   category    String
   duration    String
   price       Int     @default(0)
-  status      String  @default("upcoming") // upcoming | completed
+  status      String  @default("upcoming")
   cohort      String?
   type        String?
   enrollable  Boolean @default(true)
   imageUrl    String?
   order       Int     @default(0)
+
+  @@map("programs")
 }
 
 model EventItem {
@@ -86,9 +86,9 @@ model EventItem {
   description  String
   longWriteUp  String?
   category     String
-  mode         String  @default("Physical") // Online | Physical | Webinar
+  mode         String  @default("Physical")
   isMostRecent Boolean @default(false)
-  status       String  @default("upcoming") // ongoing | upcoming | past
+  status       String  @default("upcoming")
   date         String
   time         String
   location     String
@@ -98,43 +98,84 @@ model EventItem {
   imageUrl     String?
   videoUrl     String?
   bookable     Boolean @default(true)
-  // Which list does this event belong to?
-  // "home" = shown on home page events section
-  // "past" = shown on /events past events page
   list         String  @default("home")
   order        Int     @default(0)
 
   @@map("events")
 }
 
-// Per-workspace availability configuration set by admin
+// Per-workspace availability config set by admin
 model WorkspaceAvailability {
   id            String @id @default(cuid())
   workspaceId   String @unique
-  // JSON array of day numbers (0=Sun,1=Mon,...,6=Sat); default Mon-Fri
   availableDays String @default("[1,2,3,4,5]")
-  openTime      String @default("09:00")   // "HH:MM" 24h
-  closeTime     String @default("20:00")   // "HH:MM" 24h
-  slotDuration  Int    @default(60)         // minutes per bookable slot
-  // JSON array of "YYYY-MM-DD" strings — dates with no availability
+  openTime      String @default("09:00")
+  closeTime     String @default("20:00")
+  slotDuration  Int    @default(60)
   blackoutDates String @default("[]")
 
   @@map("workspace_availability")
 }
 
-// Individual confirmed bookings (written when user pays)
+// Confirmed workspace bookings
 model WorkspaceBooking {
   id          String   @id @default(cuid())
   workspaceId String
-  date        String                        // "YYYY-MM-DD"
-  startTime   String                        // "HH:MM" (inclusive)
-  endTime     String                        // "HH:MM" (exclusive)
-  bookingType String   @default("hourly")   // "hourly" | "daily"
+  ticketId    String   @unique
+  date        String
+  startTime   String
+  endTime     String
+  type        String   @default("hourly")
   name        String
   email       String
   phone       String
-  reason      String
+  notes       String
+  amount      Int      @default(0)
+  status      String   @default("confirmed")
   createdAt   DateTime @default(now())
 
   @@map("workspace_bookings")
+}
+
+// Course / program enrollments
+model CourseEnrollment {
+  id          String   @id @default(cuid())
+  programId   String
+  ticketId    String   @unique
+  name        String
+  email       String
+  phone       String
+  gender      String?
+  education   String?
+  amount      Int      @default(0)
+  paystackRef String?
+  status      String   @default("confirmed")
+  createdAt   DateTime @default(now())
+
+  @@map("course_enrollments")
+}
+
+// Event registrations
+model EventRegistration {
+  id          String   @id @default(cuid())
+  eventId     String
+  ticketId    String   @unique
+  name        String
+  email       String
+  phone       String
+  gender      String?
+  amount      Int      @default(0)
+  paystackRef String?
+  status      String   @default("confirmed")
+  createdAt   DateTime @default(now())
+
+  @@map("event_registrations")
+}
+
+// About page config (single JSON blob)
+model AboutConfig {
+  id   String @id @default("about")
+  data String
+
+  @@map("about_config")
 }

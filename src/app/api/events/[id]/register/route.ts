@@ -31,7 +31,7 @@ export async function POST(req: NextRequest, { params }: Params) {
 
   const regId    = crypto.randomUUID();
   const ticketId = generateTicketId("EV");
-  const now      = new Date().toISOString();
+  const now      = new Date();
 
   try {
     const rows = await db.$queryRaw<{

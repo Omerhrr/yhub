@@ -98,7 +98,7 @@ export async function POST(req: NextRequest, { params }: Params) {
         return NextResponse.json({ error: "This time slot is no longer available" }, { status: 409 });
     }
 
-    const createdAt = new Date().toISOString();
+    const createdAt = new Date();
     await db.$executeRaw`
       INSERT INTO workspace_bookings
         (id, workspaceId, ticketId, date, startTime, endTime, type, name, email, phone, notes, amount, status, createdAt)

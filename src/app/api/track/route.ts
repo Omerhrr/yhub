@@ -13,7 +13,7 @@ export async function GET(req: NextRequest) {
     const courseRows = await db.$queryRaw<Record<string, unknown>[]>`
       SELECT e.*, p.name AS programName, p.category, p.duration, p.cohort
       FROM course_enrollments e
-      LEFT JOIN Program p ON p.id = e.programId
+      LEFT JOIN programs p ON p.id = e.programId
       WHERE e.ticketId = ${ticketId}
       LIMIT 1
     `.catch(() => []);
@@ -78,7 +78,7 @@ export async function GET(req: NextRequest) {
     const wsRows = await db.$queryRaw<Record<string, unknown>[]>`
       SELECT b.*, w.name AS workspaceName
       FROM workspace_bookings b
-      LEFT JOIN Workspace w ON w.id = b.workspaceId
+      LEFT JOIN workspaces w ON w.id = b.workspaceId
       WHERE b.ticketId = ${ticketId}
       LIMIT 1
     `.catch(() => []);

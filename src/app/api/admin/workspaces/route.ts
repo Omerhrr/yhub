@@ -24,7 +24,8 @@ export async function GET(req: NextRequest) {
     return NextResponse.json(items.map(w => ({ ...w, amenities: JSON.parse(w.amenities || "[]") })));
   } catch (e) {
     console.error("GET /api/admin/workspaces", e);
-    return NextResponse.json({ error: "Failed to fetch workspaces" }, { status: 500 });
+    const msg = e instanceof Error ? e.message : String(e);
+    return NextResponse.json({ error: "Failed to fetch workspaces", detail: msg }, { status: 500 });
   }
 }
 
@@ -52,6 +53,7 @@ export async function POST(req: NextRequest) {
     );
   } catch (e) {
     console.error("POST /api/admin/workspaces", e);
-    return NextResponse.json({ error: "Failed to create workspace" }, { status: 500 });
+    const msg = e instanceof Error ? e.message : String(e);
+    return NextResponse.json({ error: "Failed to create workspace", detail: msg }, { status: 500 });
   }
 }

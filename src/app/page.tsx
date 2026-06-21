@@ -23,6 +23,7 @@ import {
 import { AdminLoginPage } from "@/components/site/pages/AuthPages";
 import { AdminDashboard } from "@/components/site/pages/AdminDashboard";
 import { TicketTrackPage } from "@/components/site/pages/TicketTrackPage";
+import { HubBot } from "@/components/site/HubBot";
 import { useNav } from "@/store/nav";
 import { useContent } from "@/store/content";
 import { toast } from "sonner";
@@ -122,6 +123,7 @@ export default function Home() {
       </main>
       <Footer />
       <ModalsHost />
+      <HubBot />
     </div>
   );
 }

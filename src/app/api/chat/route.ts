@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 
-const DEFAULT_MODEL = "deepseek/deepseek-v4-flash:free";
+const DEFAULT_MODEL = "meta-llama/llama-3.3-70b-instruct:free";
 
 async function getModel(): Promise<string> {
   // Env var always wins (Vercel override)

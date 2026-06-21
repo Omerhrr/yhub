@@ -1050,7 +1050,7 @@ const ABOUT_DEFAULTS: AboutConfig = {
   socialFacebook: "https://www.facebook.com/share/1913yPdrYe/",
   socialTwitter: "https://x.com/YahyaHub",
   socialLinkedin: "https://www.linkedin.com/company/yahyahub/posts",
-  chatModel: "deepseek/deepseek-v4-flash:free",
+  chatModel: "meta-llama/llama-3.3-70b-instruct:free",
 };
 
 const VALUE_ICONS = ["lightbulb", "users", "shield", "rocket", "star", "heart", "zap", "globe", "award"];
@@ -1346,10 +1346,11 @@ function AboutEditor() {
           <div className="rounded-md bg-muted/50 p-3 text-xs text-muted-foreground space-y-1">
             <p className="font-medium text-foreground">Recommended free models:</p>
             {[
-              "deepseek/deepseek-v4-flash:free",
-              "google/gemma-4-31b-it:free",
-              "google/gemma-4-26b-a4b-it:free",
-              "moonshotai/kimi-k2.6:free",
+                            "meta-llama/llama-3.3-70b-instruct:free",
+              "meta-llama/llama-3.2-3b-instruct:free",
+              "qwen/qwen3-coder:free",
+              "nvidia/nemotron-3-super-120b-a12b:free",
+              "nex-agi/nex-n2-pro:free",
             ].map(m => (
               <button
                 key={m}

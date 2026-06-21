@@ -1046,6 +1046,10 @@ const ABOUT_DEFAULTS: AboutConfig = {
     { q: "How do I track my booking or registration ticket?", a: "After booking or registering, you'll receive a ticket ID via email. Visit the Track page on our website and enter your ticket ID to check the status at any time." },
     { q: "How can I reach you quickly?", a: "You can reach us by email, call or WhatsApp us, or simply walk in during our operating hours. We typically respond to WhatsApp messages within a few hours." },
   ],
+  whatsapp: "https://wa.me/2347043925169",
+  socialFacebook: "https://www.facebook.com/share/1913yPdrYe/",
+  socialTwitter: "https://x.com/YahyaHub",
+  socialLinkedin: "https://www.linkedin.com/company/yahyahub/posts",
 };
 
 const VALUE_ICONS = ["lightbulb", "users", "shield", "rocket", "star", "heart", "zap", "globe", "award"];
@@ -1249,6 +1253,15 @@ function AboutEditor() {
           <Field label="Section Subtitle"><Textarea rows={2} value={cfg.visitSubtitle} onChange={e => set({ visitSubtitle: e.target.value })} /></Field>
           <Field label="Address"><Input value={cfg.address} onChange={e => set({ address: e.target.value })} /></Field>
           <Field label="Opening Hours Badge"><Input value={cfg.visitHours} onChange={e => set({ visitHours: e.target.value })} /></Field>
+          <Field label="WhatsApp Link"><Input value={cfg.whatsapp ?? ""} onChange={e => set({ whatsapp: e.target.value })} placeholder="https://wa.me/234..." /></Field>
+          <div className="pt-1">
+            <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-3 block">Social Links</Label>
+            <div className="space-y-2">
+              <Field label="Facebook URL"><Input value={cfg.socialFacebook ?? ""} onChange={e => set({ socialFacebook: e.target.value })} placeholder="https://facebook.com/..." /></Field>
+              <Field label="Twitter / X URL"><Input value={cfg.socialTwitter ?? ""} onChange={e => set({ socialTwitter: e.target.value })} placeholder="https://x.com/..." /></Field>
+              <Field label="LinkedIn URL"><Input value={cfg.socialLinkedin ?? ""} onChange={e => set({ socialLinkedin: e.target.value })} placeholder="https://linkedin.com/..." /></Field>
+            </div>
+          </div>
           <div>
             <div className="flex items-center justify-between mb-2">
               <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Visit Features</Label>

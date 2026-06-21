@@ -79,6 +79,10 @@ const DEFAULTS: AboutConfig = {
   ctaCtaPrimary: "Get Started",
   ctaCtaSecondary: "Upcoming Events",
   faqs: [],
+  whatsapp: "https://wa.me/2347043925169",
+  socialFacebook: "https://www.facebook.com/share/1913yPdrYe/",
+  socialTwitter: "https://x.com/YahyaHub",
+  socialLinkedin: "https://www.linkedin.com/company/yahyahub/posts",
 };
 
 const OFFERINGS = [
@@ -92,7 +96,7 @@ const OFFERINGS = [
 ════════════════════════════════════════ */
 export function AboutPage() {
   const { navigate } = useNav();
-  const { aboutConfig: raw, footer } = useContent();
+  const { aboutConfig: raw } = useContent();
   const cfg: AboutConfig = { ...DEFAULTS, ...(raw ?? {}) };
   const [activeTab, setActiveTab] = useState<"mission" | "vision">("mission");
 
@@ -297,7 +301,7 @@ export function AboutPage() {
                   <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-secondary/10"><Phone className="h-5 w-5 text-secondary" /></div>
                   <div><p className="text-xs text-muted-foreground uppercase tracking-wide font-medium">Call Us</p><p className="text-sm font-semibold text-foreground group-hover:text-primary transition-colors">{SITE.phone}</p></div>
                 </a>
-                <a href={`https://wa.me/234${SITE.phone.replace(/^0/, "")}`} target="_blank" rel="noopener noreferrer" className="group flex items-center gap-4 rounded-xl border border-border bg-background p-4 shadow-sm transition-all hover:border-green-500/40 hover:shadow-md">
+                <a href={cfg.whatsapp || `https://wa.me/234${SITE.phone.replace(/^0/, "")}`} target="_blank" rel="noopener noreferrer" className="group flex items-center gap-4 rounded-xl border border-border bg-background p-4 shadow-sm transition-all hover:border-green-500/40 hover:shadow-md">
                   <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-green-50"><MessageCircle className="h-5 w-5 text-green-500" /></div>
                   <div><p className="text-xs text-muted-foreground uppercase tracking-wide font-medium">WhatsApp Us</p><p className="text-sm font-semibold text-foreground group-hover:text-green-500 transition-colors">{SITE.phone}</p></div>
                 </a>
@@ -307,9 +311,9 @@ export function AboutPage() {
                 </div>
               </div>
               <div className="mt-6 flex items-center gap-3">
-                <a href={footer?.facebook || SITE.social.facebook} target="_blank" rel="noopener noreferrer" className="flex h-10 w-10 items-center justify-center rounded-full border border-border bg-background shadow-sm transition-all hover:border-primary/40 hover:bg-primary/5"><Facebook className="h-4 w-4 text-muted-foreground" /></a>
-                <a href={footer?.twitter || SITE.social.twitter} target="_blank" rel="noopener noreferrer" className="flex h-10 w-10 items-center justify-center rounded-full border border-border bg-background shadow-sm transition-all hover:border-primary/40 hover:bg-primary/5"><Twitter className="h-4 w-4 text-muted-foreground" /></a>
-                <a href={footer?.linkedin || SITE.social.linkedin} target="_blank" rel="noopener noreferrer" className="flex h-10 w-10 items-center justify-center rounded-full border border-border bg-background shadow-sm transition-all hover:border-primary/40 hover:bg-primary/5"><Linkedin className="h-4 w-4 text-muted-foreground" /></a>
+                <a href={cfg.socialFacebook || SITE.social.facebook} target="_blank" rel="noopener noreferrer" className="flex h-10 w-10 items-center justify-center rounded-full border border-border bg-background shadow-sm transition-all hover:border-primary/40 hover:bg-primary/5"><Facebook className="h-4 w-4 text-muted-foreground" /></a>
+                <a href={cfg.socialTwitter || SITE.social.twitter} target="_blank" rel="noopener noreferrer" className="flex h-10 w-10 items-center justify-center rounded-full border border-border bg-background shadow-sm transition-all hover:border-primary/40 hover:bg-primary/5"><Twitter className="h-4 w-4 text-muted-foreground" /></a>
+                <a href={cfg.socialLinkedin || SITE.social.linkedin} target="_blank" rel="noopener noreferrer" className="flex h-10 w-10 items-center justify-center rounded-full border border-border bg-background shadow-sm transition-all hover:border-primary/40 hover:bg-primary/5"><Linkedin className="h-4 w-4 text-muted-foreground" /></a>
               </div>
             </div>
             <div className="relative overflow-hidden rounded-2xl bg-primary p-8 text-white shadow-xl">

@@ -74,6 +74,10 @@ export type AboutConfig = {
   ctaCtaPrimary: string;
   ctaCtaSecondary: string;
   faqs: AboutFaq[];
+  whatsapp: string;
+  socialFacebook: string;
+  socialTwitter: string;
+  socialLinkedin: string;
 };
 
 type ContentState = {

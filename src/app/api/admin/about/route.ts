@@ -58,6 +58,10 @@ const DEFAULT_ABOUT = {
     { q: "How do I track my booking or registration ticket?", a: "After booking or registering, you'll receive a ticket ID via email. Visit the Track page on our website and enter your ticket ID to check the status at any time." },
     { q: "How can I reach you quickly?", a: "You can reach us by email, call or WhatsApp us, or simply walk in during our operating hours. We typically respond to WhatsApp messages within a few hours." },
   ],
+  whatsapp: "https://wa.me/2347043925169",
+  socialFacebook: "https://www.facebook.com/share/1913yPdrYe/",
+  socialTwitter: "https://x.com/YahyaHub",
+  socialLinkedin: "https://www.linkedin.com/company/yahyahub/posts",
 };
 
 async function getAbout() {

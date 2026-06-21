@@ -1036,6 +1036,16 @@ const ABOUT_DEFAULTS: AboutConfig = {
   address: "Abuja, Nigeria",
   ctaTitle: "Join Our Community", ctaSub: "Whether you're looking for a place to work, a skill to learn, or a network to grow with — you have a home at Yahya Hub.",
   ctaCtaPrimary: "Get Started", ctaCtaSecondary: "Upcoming Events",
+  faqs: [
+    { q: "What is Yahya Hub?", a: "Yahya Hub is a co-working space, innovation center, and community hub in Abuja, Nigeria. We provide flexible workspaces, training programs, and networking events designed to help entrepreneurs, freelancers, and professionals grow." },
+    { q: "How do I book a workspace?", a: "Browse available spaces on our website, choose your preferred date and time (hourly or full-day), complete payment via Paystack, and you'll receive an email confirmation with your ticket." },
+    { q: "What payment methods do you accept?", a: "We accept card payments (Visa, Mastercard, Verve) and bank transfers through Paystack. Payment is required upfront to confirm your booking or registration." },
+    { q: "Can I get a refund if I cancel?", a: "Cancellations made at least 48 hours before your scheduled date are eligible for a refund. Please contact us via email or WhatsApp to initiate a cancellation." },
+    { q: "Do I need to be a member to attend events?", a: "No, most of our events are open to the public. Some events may require registration or have a fee. Check the event details on our Events page for specific requirements." },
+    { q: "What amenities are available at the hub?", a: "We offer high-speed Wi-Fi, power backup, printing/scanning, meeting rooms, a lounge area, and on-site support. Specific amenities vary by workspace type." },
+    { q: "How do I track my booking or registration ticket?", a: "After booking or registering, you'll receive a ticket ID via email. Visit the Track page on our website and enter your ticket ID to check the status at any time." },
+    { q: "How can I reach you quickly?", a: "You can reach us by email, call or WhatsApp us, or simply walk in during our operating hours. We typically respond to WhatsApp messages within a few hours." },
+  ],
 };
 
 const VALUE_ICONS = ["lightbulb", "users", "shield", "rocket", "star", "heart", "zap", "globe", "award"];
@@ -1045,7 +1055,7 @@ function AboutEditor() {
   const { aboutConfig: raw, fetchContent } = useContent();
   const [cfg, setCfg] = React.useState<AboutConfig>({ ...ABOUT_DEFAULTS, ...(raw ?? {}) });
   const [saving, setSaving] = React.useState(false);
-  const [activeSection, setActiveSection] = React.useState<"hero" | "stats" | "mission" | "timeline" | "values" | "visit" | "cta">("hero");
+  const [activeSection, setActiveSection] = React.useState<"hero" | "stats" | "mission" | "timeline" | "values" | "visit" | "faq" | "cta">("hero");
 
   // Keep in sync when store loads
   React.useEffect(() => {
@@ -1071,6 +1081,7 @@ function AboutEditor() {
     { id: "timeline" as const, label: "Timeline" },
     { id: "values" as const, label: "Core Values" },
     { id: "visit" as const, label: "Visit / Contact" },
+    { id: "faq" as const, label: "FAQ" },
     { id: "cta" as const, label: "CTA Banner" },
   ];
 
@@ -1259,6 +1270,48 @@ function AboutEditor() {
         </Card>
       )}
 
+      {/* ── FAQ ── */}
+      {activeSection === "faq" && (
+        <Card className="p-6 space-y-4 border-border/60">
+          <div className="flex items-center justify-between">
+            <p className="text-sm text-muted-foreground">Add, edit, or remove FAQ items. They appear on the About page.</p>
+            <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => set({ faqs: [...(cfg.faqs ?? []), { q: "", a: "" }] })}>
+              <Plus className="h-3 w-3 mr-1" /> Add Question
+            </Button>
+          </div>
+          <div className="space-y-4">
+            {(cfg.faqs ?? []).map((faq, i) => (
+              <div key={i} className="rounded-lg border border-border/60 p-4 space-y-3">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Question {i + 1}</span>
+                  <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" onClick={() => set({ faqs: cfg.faqs.filter((_, j) => j !== i) })}>
+                    <X className="h-3.5 w-3.5" />
+                  </Button>
+                </div>
+                <Field label="Question">
+                  <Input
+                    value={faq.q}
+                    onChange={e => { const n = [...cfg.faqs]; n[i] = { ...n[i], q: e.target.value }; set({ faqs: n }); }}
+                    placeholder="e.g. How do I book a workspace?"
+                  />
+                </Field>
+                <Field label="Answer">
+                  <Textarea
+                    rows={3}
+                    value={faq.a}
+                    onChange={e => { const n = [...cfg.faqs]; n[i] = { ...n[i], a: e.target.value }; set({ faqs: n }); }}
+                    placeholder="Type the answer here..."
+                  />
+                </Field>
+              </div>
+            ))}
+            {(cfg.faqs ?? []).length === 0 && (
+              <p className="text-center text-sm text-muted-foreground py-6">No FAQ items yet. Click &quot;Add Question&quot; to get started.</p>
+            )}
+          </div>
+        </Card>
+      )}
+
       {/* ── CTA Banner ── */}
       {activeSection === "cta" && (
         <Card className="p-6 space-y-4 border-border/60">
@@ -1274,9 +1327,6 @@ function AboutEditor() {
   );
 }
 
-/* ══════════════════════════════════════════
-   FOOTER EDITOR
-══════════════════════════════════════════ */
 function FooterEditor() {
   const { footer, fetchContent } = useContent();
   const [form, setForm] = useState({ email: footer?.email ?? "", phone: footer?.phone ?? "", facebook: footer?.facebook ?? "", twitter: footer?.twitter ?? "", linkedin: footer?.linkedin ?? "" });

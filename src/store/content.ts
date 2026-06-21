@@ -46,6 +46,7 @@ export type StatusCardData = {
 export type AboutStat = { value: string; label: string };
 export type AboutTimelineItem = { year: string; title: string; desc: string };
 export type AboutValue = { title: string; desc: string; icon: string; color: string };
+export type AboutFaq = { q: string; a: string };
 
 export type AboutConfig = {
   heroTitle: string;
@@ -72,6 +73,7 @@ export type AboutConfig = {
   ctaSub: string;
   ctaCtaPrimary: string;
   ctaCtaSecondary: string;
+  faqs: AboutFaq[];
 };
 
 type ContentState = {

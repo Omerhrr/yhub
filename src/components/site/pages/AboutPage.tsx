@@ -78,6 +78,7 @@ const DEFAULTS: AboutConfig = {
   ctaSub: "Whether you're looking for a place to work, a skill to learn, or a network to grow with — you have a home at Yahya Hub. Become part of our story today.",
   ctaCtaPrimary: "Get Started",
   ctaCtaSecondary: "Upcoming Events",
+  faqs: [],
 };
 
 const OFFERINGS = [
@@ -91,7 +92,7 @@ const OFFERINGS = [
 ════════════════════════════════════════ */
 export function AboutPage() {
   const { navigate } = useNav();
-  const { aboutConfig: raw } = useContent();
+  const { aboutConfig: raw, footer } = useContent();
   const cfg: AboutConfig = { ...DEFAULTS, ...(raw ?? {}) };
   const [activeTab, setActiveTab] = useState<"mission" | "vision">("mission");
 
@@ -306,9 +307,9 @@ export function AboutPage() {
                 </div>
               </div>
               <div className="mt-6 flex items-center gap-3">
-                <a href={SITE.social.facebook} target="_blank" rel="noopener noreferrer" className="flex h-10 w-10 items-center justify-center rounded-full border border-border bg-background shadow-sm transition-all hover:border-primary/40 hover:bg-primary/5"><Facebook className="h-4 w-4 text-muted-foreground" /></a>
-                <a href={SITE.social.twitter} target="_blank" rel="noopener noreferrer" className="flex h-10 w-10 items-center justify-center rounded-full border border-border bg-background shadow-sm transition-all hover:border-primary/40 hover:bg-primary/5"><Twitter className="h-4 w-4 text-muted-foreground" /></a>
-                <a href={SITE.social.linkedin} target="_blank" rel="noopener noreferrer" className="flex h-10 w-10 items-center justify-center rounded-full border border-border bg-background shadow-sm transition-all hover:border-primary/40 hover:bg-primary/5"><Linkedin className="h-4 w-4 text-muted-foreground" /></a>
+                <a href={footer?.facebook || SITE.social.facebook} target="_blank" rel="noopener noreferrer" className="flex h-10 w-10 items-center justify-center rounded-full border border-border bg-background shadow-sm transition-all hover:border-primary/40 hover:bg-primary/5"><Facebook className="h-4 w-4 text-muted-foreground" /></a>
+                <a href={footer?.twitter || SITE.social.twitter} target="_blank" rel="noopener noreferrer" className="flex h-10 w-10 items-center justify-center rounded-full border border-border bg-background shadow-sm transition-all hover:border-primary/40 hover:bg-primary/5"><Twitter className="h-4 w-4 text-muted-foreground" /></a>
+                <a href={footer?.linkedin || SITE.social.linkedin} target="_blank" rel="noopener noreferrer" className="flex h-10 w-10 items-center justify-center rounded-full border border-border bg-background shadow-sm transition-all hover:border-primary/40 hover:bg-primary/5"><Linkedin className="h-4 w-4 text-muted-foreground" /></a>
               </div>
             </div>
             <div className="relative overflow-hidden rounded-2xl bg-primary p-8 text-white shadow-xl">
@@ -337,7 +338,7 @@ export function AboutPage() {
       </section>
 
       {/* ── FAQ ── */}
-      <FaqSection />
+      <FaqSection faqs={cfg.faqs} />
 
       {/* ── CTA BANNER ── */}
       <section className="py-20 bg-primary relative overflow-hidden">
@@ -366,7 +367,7 @@ export function AboutPage() {
 /* ─────────────────────────────────────────────────────────────────────
    FAQ SECTION
 ───────────────────────────────────────────────────────────────────── */
-const FAQS = [
+const DEFAULT_FAQS = [
   {
     q: "What is Yahya Hub?",
     a: "Yahya Hub is a co-working space, innovation center, and community hub in Abuja, Nigeria. We provide flexible workspaces, training programs, and networking events designed to help entrepreneurs, freelancers, and professionals grow.",
@@ -401,8 +402,9 @@ const FAQS = [
   },
 ];
 
-function FaqSection() {
+function FaqSection({ faqs }: { faqs?: { q: string; a: string }[] }) {
   const [open, setOpen] = useState<number | null>(null);
+  const items = faqs && faqs.length > 0 ? faqs : DEFAULT_FAQS;
 
   return (
     <section className="py-20 bg-background">
@@ -414,7 +416,7 @@ function FaqSection() {
         </div>
 
         <div className="space-y-3">
-          {FAQS.map((faq, i) => (
+          {items.map((faq, i) => (
             <div
               key={i}
               className="rounded-xl border border-border bg-background shadow-sm overflow-hidden"
@@ -433,7 +435,7 @@ function FaqSection() {
               </button>
               {open === i && (
                 <div className="px-6 pb-5 text-sm text-muted-foreground leading-relaxed border-t border-border/50 pt-4">
-                  {faq.a}
+                    {faq.a}
                 </div>
               )}
             </div>

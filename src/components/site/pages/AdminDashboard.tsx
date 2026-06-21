@@ -1050,6 +1050,7 @@ const ABOUT_DEFAULTS: AboutConfig = {
   socialFacebook: "https://www.facebook.com/share/1913yPdrYe/",
   socialTwitter: "https://x.com/YahyaHub",
   socialLinkedin: "https://www.linkedin.com/company/yahyahub/posts",
+  chatModel: "deepseek/deepseek-v4-flash:free",
 };
 
 const VALUE_ICONS = ["lightbulb", "users", "shield", "rocket", "star", "heart", "zap", "globe", "award"];
@@ -1059,7 +1060,7 @@ function AboutEditor() {
   const { aboutConfig: raw, fetchContent } = useContent();
   const [cfg, setCfg] = React.useState<AboutConfig>({ ...ABOUT_DEFAULTS, ...(raw ?? {}) });
   const [saving, setSaving] = React.useState(false);
-  const [activeSection, setActiveSection] = React.useState<"hero" | "stats" | "mission" | "timeline" | "values" | "visit" | "faq" | "cta">("hero");
+  const [activeSection, setActiveSection] = React.useState<"hero" | "stats" | "mission" | "timeline" | "values" | "visit" | "faq" | "chatbot" | "cta">("hero");
 
   // Keep in sync when store loads
   React.useEffect(() => {
@@ -1086,6 +1087,7 @@ function AboutEditor() {
     { id: "values" as const, label: "Core Values" },
     { id: "visit" as const, label: "Visit / Contact" },
     { id: "faq" as const, label: "FAQ" },
+    { id: "chatbot" as const, label: "Chatbot" },
     { id: "cta" as const, label: "CTA Banner" },
   ];
 
@@ -1326,6 +1328,43 @@ function AboutEditor() {
       )}
 
       {/* ── CTA Banner ── */}
+      {activeSection === "chatbot" && (
+        <Card className="p-6 space-y-4 border-border/60">
+          <div className="space-y-1">
+            <p className="text-sm font-medium">AI Model (OpenRouter slug)</p>
+            <p className="text-xs text-muted-foreground mb-2">
+              Enter any OpenRouter model ID. Append <code className="bg-muted px-1 rounded">:free</code> for free-tier models.
+              Browse available models at <span className="text-primary">openrouter.ai/models</span>.
+            </p>
+            <Input
+              value={cfg.chatModel ?? "deepseek/deepseek-v4-flash:free"}
+              onChange={e => set({ chatModel: e.target.value })}
+              placeholder="e.g. deepseek/deepseek-v4-flash:free"
+              className="font-mono text-sm"
+            />
+          </div>
+          <div className="rounded-md bg-muted/50 p-3 text-xs text-muted-foreground space-y-1">
+            <p className="font-medium text-foreground">Recommended free models:</p>
+            {[
+              "deepseek/deepseek-v4-flash:free",
+              "google/gemma-4-31b-it:free",
+              "google/gemma-4-26b-a4b-it:free",
+              "moonshotai/kimi-k2.6:free",
+            ].map(m => (
+              <button
+                key={m}
+                type="button"
+                className="block font-mono hover:text-primary transition-colors cursor-pointer"
+                onClick={() => set({ chatModel: m })}
+              >{m}</button>
+            ))}
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Note: if <code className="bg-muted px-1 rounded">OPENROUTER_MODEL</code> is set in your Vercel environment variables, it overrides this setting.
+          </p>
+        </Card>
+      )}
+
       {activeSection === "cta" && (
         <Card className="p-6 space-y-4 border-border/60">
           <Field label="Banner Title"><Input value={cfg.ctaTitle} onChange={e => set({ ctaTitle: e.target.value })} /></Field>

@@ -1,7 +1,22 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 
-const MODEL = process.env.OPENROUTER_MODEL ?? "meta-llama/llama-3.1-8b-instruct:free";
+const DEFAULT_MODEL = "deepseek/deepseek-v4-flash:free";
+
+async function getModel(): Promise<string> {
+  // Env var always wins (Vercel override)
+  if (process.env.OPENROUTER_MODEL) return process.env.OPENROUTER_MODEL;
+  try {
+    const rows = await db.$queryRaw<{ id: string; data: string }[]>`
+      SELECT data FROM about_config WHERE id = 'about' LIMIT 1
+    `;
+    if (rows.length > 0) {
+      const cfg = JSON.parse(rows[0].data);
+      if (cfg.chatModel) return cfg.chatModel;
+    }
+  } catch { /* fall through */ }
+  return DEFAULT_MODEL;
+}
 
 async function buildSystemPrompt(): Promise<string> {
   let wsLines = "Contact us for workspace details.";
@@ -122,7 +137,7 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const systemPrompt = await buildSystemPrompt();
+    const [systemPrompt, model] = await Promise.all([buildSystemPrompt(), getModel()]);
 
     const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
       method: "POST",
@@ -133,7 +148,7 @@ export async function POST(req: NextRequest) {
         "X-Title": "Yahya Hub Hubbot",
       },
       body: JSON.stringify({
-        model: MODEL,
+        model,
         messages: [{ role: "system", content: systemPrompt }, ...messages],
         max_tokens: 450,
         temperature: 0.65,

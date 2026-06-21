@@ -78,6 +78,7 @@ export type AboutConfig = {
   socialFacebook: string;
   socialTwitter: string;
   socialLinkedin: string;
+  chatModel: string;
 };
 
 type ContentState = {

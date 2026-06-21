@@ -83,6 +83,7 @@ const DEFAULTS: AboutConfig = {
   socialFacebook: "https://www.facebook.com/share/1913yPdrYe/",
   socialTwitter: "https://x.com/YahyaHub",
   socialLinkedin: "https://www.linkedin.com/company/yahyahub/posts",
+  chatModel: "deepseek/deepseek-v4-flash:free",
 };
 
 const OFFERINGS = [

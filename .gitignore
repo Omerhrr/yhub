@@ -64,5 +64,7 @@ download/
 examples/
 
 # Mini-services build artifacts
-mini-services/*/node_modules/
-mini-services/*/dist/
+mini-services/*/nod
+# WSL2 FUSE filesystem artifacts
+.fuse_hidden*
+**/.fuse_hidden*

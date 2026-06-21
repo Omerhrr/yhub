@@ -1,0 +1,109 @@
+import { NextRequest, NextResponse } from "next/server";
+import { db } from "@/lib/db";
+
+export async function GET(req: NextRequest) {
+  const ticketId = req.nextUrl.searchParams.get("id")?.trim().toUpperCase();
+
+  if (!ticketId || !/^YH-(WS|CS|EV)-\d{8}-[A-Z0-9]+$/.test(ticketId)) {
+    return NextResponse.json({ error: "Invalid ticket ID format" }, { status: 400 });
+  }
+
+  try {
+    // Course enrollment
+    const enrollment = await db.courseEnrollment.findUnique({
+      where: { ticketId },
+    }).catch(() => null);
+
+    if (enrollment) {
+      const program = await db.program.findUnique({ where: { id: enrollment.programId } }).catch(() => null);
+      return NextResponse.json({
+        found:     true,
+        type:      "course",
+        ticketId,
+        title:     program?.name ?? "Course",
+        name:      enrollment.name,
+        email:     maskEmail(enrollment.email),
+        date:      program?.cohort ?? "See schedule",
+        time:      program?.duration,
+        location:  "Yahya Hub, Abuja, Nigeria",
+        amount:    enrollment.amount ?? 0,
+        status:    enrollment.status ?? "confirmed",
+        extra: [
+          { label: "Category", value: program?.category },
+          { label: "Duration", value: program?.duration },
+        ].filter(x => x.value),
+      });
+    }
+
+    // Event registration
+    const registration = await db.eventRegistration.findUnique({
+      where: { ticketId },
+    }).catch(() => null);
+
+    if (registration) {
+      const event = await db.eventItem.findUnique({ where: { id: registration.eventId } }).catch(() => null);
+      const location = event?.mode === "Webinar"
+        ? "Online (Webinar)"
+        : (event?.location ?? "Yahya Hub, Abuja, Nigeria");
+      return NextResponse.json({
+        found:     true,
+        type:      "event",
+        ticketId,
+        title:     event?.title ?? "Event",
+        name:      registration.name,
+        email:     maskEmail(registration.email),
+        date:      event?.date,
+        time:      event?.time,
+        location,
+        amount:    registration.amount ?? 0,
+        status:    registration.status ?? "confirmed",
+        extra: [
+          { label: "Category", value: event?.category },
+          { label: "Mode",     value: event?.mode },
+        ].filter(x => x.value),
+      });
+    }
+
+    // Workspace booking
+    const booking = await db.workspaceBooking.findUnique({
+      where: { ticketId },
+    }).catch(() => null);
+
+    if (booking) {
+      const workspace = await db.workspace.findUnique({ where: { id: booking.workspaceId } }).catch(() => null);
+      const bkType = booking.type ?? "hourly";
+      const timeLabel = bkType === "daily"
+        ? "Full day (09:00 - 20:00)"
+        : `${booking.startTime} - ${booking.endTime}`;
+      return NextResponse.json({
+        found:     true,
+        type:      "workspace",
+        ticketId,
+        title:     workspace?.name ?? "Workspace",
+        name:      booking.name,
+        email:     maskEmail(booking.email),
+        date:      booking.date,
+        time:      timeLabel,
+        location:  "Yahya Hub, Abuja, Nigeria",
+        amount:    booking.amount ?? 0,
+        status:    booking.status ?? "confirmed",
+        extra: [
+          { label: "Booking Type", value: bkType === "daily" ? "Full Day" : "Hourly" },
+          { label: "Purpose",      value: booking.notes },
+        ].filter(x => x.value),
+      });
+    }
+
+    return NextResponse.json({ found: false });
+  } catch (e) {
+    console.error("GET /api/track", e);
+    return NextResponse.json({ error: "Lookup failed" }, { status: 500 });
+  }
+}
+
+function maskEmail(email: string): string {
+  const [local, domain] = email.split("@");
+  if (!domain) return email;
+  const visible = local.slice(0, 2);
+  return `${visible}${"*".repeat(Math.max(1, local.length - 2))}@${domain}`;
+}

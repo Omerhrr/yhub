@@ -1419,6 +1419,9 @@ function FooterEditor() {
 /* ══════════════════════════════════════════
    TICKETS VIEWER
 ══════════════════════════════════════════ */
+/* ══════════════════════════════════════════
+   TICKETS VIEWER
+══════════════════════════════════════════ */
 type TicketKind = "workspace" | "course" | "event";
 
 type TicketRow = {
@@ -1442,11 +1445,96 @@ const KIND_BADGE: Record<TicketKind, string> = {
 };
 
 const KIND_LABEL: Record<TicketKind, string> = {
-  workspace: "Workspace",
-  course:    "Course",
-  event:     "Event",
+  workspace: "Workspace Booking",
+  course:    "Course Enrollment",
+  event:     "Event Registration",
 };
 
+const KIND_COLOR: Record<TicketKind, string> = {
+  workspace: "#013156",
+  course:    "#065f46",
+  event:     "#6d28d9",
+};
+
+/* ── Detail view ─────────────────────────────────────── */
+function TicketDetail({ ticket, onBack }: { ticket: TicketRow; onBack: () => void }) {
+  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${encodeURIComponent(ticket.ticketId)}&bgcolor=ffffff&color=013156&margin=6`;
+  const headerColor = KIND_COLOR[ticket.kind];
+
+  const fields: { label: string; value: string }[] = [
+    { label: "Ticket ID",  value: ticket.ticketId },
+    { label: "Type",       value: KIND_LABEL[ticket.kind] },
+    { label: "Name",       value: ticket.name },
+    { label: "Email",      value: ticket.email },
+    { label: "Phone",      value: ticket.phone },
+    { label: "Amount",     value: ticket.amount === 0 ? "Free" : `₦${ticket.amount.toLocaleString("en-NG")}` },
+    { label: "Status",     value: ticket.status },
+    { label: "Detail",     value: ticket.detail },
+    { label: "Reference",  value: ticket.refId },
+    { label: "Created",    value: new Date(ticket.createdAt).toLocaleString() },
+  ];
+
+  return (
+    <div className="space-y-4">
+      {/* Back bar */}
+      <div className="flex items-center gap-3">
+        <Button size="sm" variant="ghost" onClick={onBack} className="gap-1.5">
+          <ChevronRight className="h-4 w-4 rotate-180" />Back to list
+        </Button>
+        <span className="text-muted-foreground text-sm">/</span>
+        <span className="text-sm font-medium">{ticket.ticketId}</span>
+      </div>
+
+      {/* Ticket card */}
+      <Card className="overflow-hidden border-border/60">
+        {/* Coloured header */}
+        <div className="px-8 py-6 flex items-center justify-between" style={{ background: headerColor }}>
+          <div>
+            <p className="text-white/70 text-xs uppercase tracking-wider mb-1">{KIND_LABEL[ticket.kind]}</p>
+            <p className="text-white text-xl font-bold">{ticket.name}</p>
+            <p className="text-white/60 text-sm mt-0.5">{ticket.email}</p>
+          </div>
+          <div className="text-right">
+            <span className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ${ticket.status === "confirmed" ? "bg-green-400/20 text-green-200" : "bg-yellow-400/20 text-yellow-200"}`}>
+              {ticket.status.toUpperCase()}
+            </span>
+            <p className="text-white/50 text-xs mt-2">{ticket.createdAt.slice(0, 10)}</p>
+          </div>
+        </div>
+
+        {/* Body */}
+        <div className="p-8 flex gap-8">
+          {/* Fields grid */}
+          <div className="flex-1 grid grid-cols-2 gap-x-12 gap-y-5">
+            {fields.map(f => (
+              <div key={f.label}>
+                <p className="text-xs text-muted-foreground mb-0.5">{f.label}</p>
+                <p className={`text-sm font-medium break-all ${f.label === "Ticket ID" || f.label === "Reference" ? "font-mono text-xs" : ""}`}>
+                  {f.value}
+                </p>
+              </div>
+            ))}
+          </div>
+
+          {/* QR code */}
+          <div className="flex flex-col items-center gap-2 shrink-0">
+            <img src={qrUrl} alt="QR" className="w-28 h-28 rounded-lg border border-border" />
+            <p className="text-xs text-muted-foreground text-center">Scan to verify</p>
+          </div>
+        </div>
+
+        {/* Divider + ticket ID footer */}
+        <div className="border-t border-dashed mx-6" />
+        <div className="px-8 py-4 flex items-center justify-between bg-muted/30">
+          <p className="font-mono text-xs text-muted-foreground">{ticket.ticketId}</p>
+          <p className="text-xs text-muted-foreground">Yahya Hub · Abuja, Nigeria</p>
+        </div>
+      </Card>
+    </div>
+  );
+}
+
+/* ── List view ─────────────────────────────────────────── */
 function TicketsViewer() {
   const [tickets, setTickets]   = useState<TicketRow[]>([]);
   const [total, setTotal]       = useState(0);
@@ -1456,7 +1544,7 @@ function TicketsViewer() {
   const [to, setTo]             = useState("");
   const [kindFilter, setKindFilter] = useState<"" | TicketKind>("");
   const [search, setSearch]     = useState("");
-  const [expanded, setExpanded] = useState<string | null>(null);
+  const [selected, setSelected] = useState<TicketRow | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -1498,6 +1586,15 @@ function TicketsViewer() {
     a.href = url; a.download = `tickets-${Date.now()}.csv`; a.click();
     URL.revokeObjectURL(url);
   };
+
+  /* Show detail page */
+  if (selected) {
+    return (
+      <SectionShell title="Ticket Detail" description="Full ticket information.">
+        <TicketDetail ticket={selected} onBack={() => setSelected(null)} />
+      </SectionShell>
+    );
+  }
 
   return (
     <SectionShell
@@ -1585,45 +1682,32 @@ function TicketsViewer() {
               </thead>
               <tbody>
                 {displayed.map(t => (
-                  <React.Fragment key={t.id}>
-                    <tr
-                      className="border-b last:border-0 hover:bg-muted/30 cursor-pointer transition-colors"
-                      onClick={() => setExpanded(expanded === t.id ? null : t.id)}
-                    >
-                      <td className="px-4 py-3 font-mono text-xs text-muted-foreground whitespace-nowrap">{t.ticketId}</td>
-                      <td className="px-4 py-3">
-                        <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${KIND_BADGE[t.kind]}`}>
-                          {KIND_LABEL[t.kind]}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 font-medium whitespace-nowrap">{t.name}</td>
-                      <td className="px-4 py-3 text-muted-foreground text-xs">{t.email}</td>
-                      <td className="px-4 py-3 whitespace-nowrap">
-                        {t.amount === 0 ? <span className="text-muted-foreground text-xs">Free</span> : `₦${t.amount.toLocaleString("en-NG")}`}
-                      </td>
-                      <td className="px-4 py-3">
-                        <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${t.status === "confirmed" ? "bg-green-100 text-green-800" : "bg-yellow-100 text-yellow-800"}`}>
-                          {t.status}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">{t.createdAt.slice(0,10)}</td>
-                      <td className="px-4 py-3 text-muted-foreground">
-                        <ChevronRight className={`h-4 w-4 transition-transform ${expanded === t.id ? "rotate-90" : ""}`} />
-                      </td>
-                    </tr>
-                    {expanded === t.id && (
-                      <tr className="bg-muted/20 border-b">
-                        <td colSpan={8} className="px-6 py-4">
-                          <div className="grid grid-cols-2 gap-x-8 gap-y-2 text-xs">
-                            <div><span className="text-muted-foreground">Phone: </span>{t.phone}</div>
-                            <div><span className="text-muted-foreground">Detail: </span>{t.detail}</div>
-                            <div><span className="text-muted-foreground">Ref ID: </span><span className="font-mono">{t.refId}</span></div>
-                            <div><span className="text-muted-foreground">Created: </span>{new Date(t.createdAt).toLocaleString()}</div>
-                          </div>
-                        </td>
-                      </tr>
-                    )}
-                  </React.Fragment>
+                  <tr
+                    key={t.id}
+                    className="border-b last:border-0 hover:bg-muted/30 cursor-pointer transition-colors"
+                    onClick={() => setSelected(t)}
+                  >
+                    <td className="px-4 py-3 font-mono text-xs text-muted-foreground whitespace-nowrap">{t.ticketId}</td>
+                    <td className="px-4 py-3">
+                      <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${KIND_BADGE[t.kind]}`}>
+                        {KIND_LABEL[t.kind].split(" ")[0]}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 font-medium whitespace-nowrap">{t.name}</td>
+                    <td className="px-4 py-3 text-muted-foreground text-xs">{t.email}</td>
+                    <td className="px-4 py-3 whitespace-nowrap">
+                      {t.amount === 0 ? <span className="text-muted-foreground text-xs">Free</span> : `₦${t.amount.toLocaleString("en-NG")}`}
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${t.status === "confirmed" ? "bg-green-100 text-green-800" : "bg-yellow-100 text-yellow-800"}`}>
+                        {t.status}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">{t.createdAt.slice(0,10)}</td>
+                    <td className="px-4 py-3 text-muted-foreground">
+                      <ChevronRight className="h-4 w-4" />
+                    </td>
+                  </tr>
                 ))}
               </tbody>
             </table>

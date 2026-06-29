@@ -63,7 +63,7 @@ export function buildTicketEmail(d: TicketData): string {
   const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=140x140&data=${encodeURIComponent(d.ticketId)}&bgcolor=ffffff&color=013156&margin=8`;
   const headerBg = TYPE_COLORS[d.type] ?? BRAND_NAVY;
   const badgeBg  = TYPE_BADGE[d.type]  ?? BRAND_SKY;
-  const trackUrl = `${d.siteUrl}/?track=${d.ticketId}`;
+  const trackUrl = `${d.siteUrl}/tracking?track=${d.ticketId}`;
 
   const extraHtml = (d.extraRows ?? [])
     .map(r => `

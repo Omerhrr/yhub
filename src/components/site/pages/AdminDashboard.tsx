@@ -1,11 +1,11 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   Loader2, Save, Plus, Trash2, Pencil, X, LayoutDashboard,
   Image, Activity, Building2, BookOpen, CalendarDays, Settings,
   LogOut, ChevronRight, Wifi, Zap, Thermometer, BriefcaseBusiness,
-  Users, TrendingUp, Menu, Bell,
+  Users, TrendingUp, Menu, Bell, Ticket, Filter, Download,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -40,7 +40,7 @@ function adminHeaders(): HeadersInit {
 
 
 /* ─── Types ─── */
-type Tab = "overview" | "hero" | "status" | "workspaces" | "courses" | "events" | "about" | "footer";
+type Tab = "overview" | "hero" | "status" | "workspaces" | "courses" | "events" | "about" | "footer" | "tickets";
 
 type NavItem = { id: Tab; label: string; icon: React.ElementType; badge?: number };
 
@@ -51,6 +51,7 @@ const NAV_ITEMS: NavItem[] = [
   { id: "workspaces", label: "Workspaces",    icon: Building2 },
   { id: "courses",    label: "Courses",       icon: BookOpen },
   { id: "events",     label: "Events",        icon: CalendarDays },
+  { id: "tickets",    label: "Tickets",       icon: Ticket },
   { id: "about",      label: "About Page",    icon: Users },
   { id: "footer",     label: "Footer",        icon: Settings },
 ];
@@ -169,6 +170,7 @@ export function AdminDashboard() {
             {tab === "events"     && <EventsEditor />}
             {tab === "about"      && <AboutEditor />}
             {tab === "footer"     && <FooterEditor />}
+            {tab === "tickets"    && <TicketsViewer />}
           </div>
         </main>
       </div>
@@ -1410,6 +1412,224 @@ function FooterEditor() {
           </Button>
         </div>
       </div>
+    </SectionShell>
+  );
+}
+
+/* ══════════════════════════════════════════
+   TICKETS VIEWER
+══════════════════════════════════════════ */
+type TicketKind = "workspace" | "course" | "event";
+
+type TicketRow = {
+  id: string;
+  ticketId: string;
+  kind: TicketKind;
+  name: string;
+  email: string;
+  phone: string;
+  amount: number;
+  status: string;
+  createdAt: string;
+  detail: string;
+  refId: string;
+};
+
+const KIND_BADGE: Record<TicketKind, string> = {
+  workspace: "bg-sky-100 text-sky-800",
+  course:    "bg-emerald-100 text-emerald-800",
+  event:     "bg-violet-100 text-violet-800",
+};
+
+const KIND_LABEL: Record<TicketKind, string> = {
+  workspace: "Workspace",
+  course:    "Course",
+  event:     "Event",
+};
+
+function TicketsViewer() {
+  const [tickets, setTickets]   = useState<TicketRow[]>([]);
+  const [total, setTotal]       = useState(0);
+  const [revenue, setRevenue]   = useState(0);
+  const [loading, setLoading]   = useState(false);
+  const [from, setFrom]         = useState("");
+  const [to, setTo]             = useState("");
+  const [kindFilter, setKindFilter] = useState<"" | TicketKind>("");
+  const [search, setSearch]     = useState("");
+  const [expanded, setExpanded] = useState<string | null>(null);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    try {
+      const params = new URLSearchParams();
+      if (from) params.set("from", from);
+      if (to)   params.set("to", to);
+      if (kindFilter) params.set("type", kindFilter);
+      const res = await fetch(`/api/admin/tickets?${params}`, { headers: adminHeaders() });
+      if (!res.ok) throw new Error("Failed");
+      const data = await res.json();
+      setTickets(data.tickets ?? []);
+      setTotal(data.total ?? 0);
+      setRevenue(data.revenue ?? 0);
+    } catch {
+      toast.error("Failed to load tickets");
+    } finally {
+      setLoading(false);
+    }
+  }, [from, to, kindFilter]);
+
+  useEffect(() => { load(); }, [load]);
+
+  const displayed = tickets.filter(t =>
+    !search || [t.ticketId, t.name, t.email, t.phone].some(v =>
+      v.toLowerCase().includes(search.toLowerCase())
+    )
+  );
+
+  const exportCsv = () => {
+    const header = "Ticket ID,Type,Name,Email,Phone,Amount,Status,Date,Detail";
+    const rows = displayed.map(t =>
+      [t.ticketId, t.kind, t.name, t.email, t.phone, t.amount, t.status,
+       t.createdAt.slice(0,10), t.detail].map(v => `"${String(v).replace(/"/g, '""')}"`).join(",")
+    );
+    const blob = new Blob([[header, ...rows].join("\n")], { type: "text/csv" });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement("a");
+    a.href = url; a.download = `tickets-${Date.now()}.csv`; a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  return (
+    <SectionShell
+      title="Ticket Logs"
+      description="All bookings, enrollments, and event registrations."
+      action={
+        <div className="flex gap-2">
+          <Button size="sm" variant="outline" onClick={exportCsv} disabled={displayed.length === 0}>
+            <Download className="h-3.5 w-3.5 mr-1.5" />Export CSV
+          </Button>
+          <Button size="sm" onClick={load} disabled={loading}>
+            {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" /> : <Filter className="h-3.5 w-3.5 mr-1.5" />}
+            Refresh
+          </Button>
+        </div>
+      }
+    >
+      {/* Stats row */}
+      <div className="grid grid-cols-3 gap-4 mb-4">
+        {[
+          { label: "Total Tickets", value: total },
+          { label: "Shown", value: displayed.length },
+          { label: "Revenue", value: `₦${revenue.toLocaleString("en-NG")}` },
+        ].map(s => (
+          <Card key={s.label} className="p-4 border-border/60">
+            <p className="text-xs text-muted-foreground">{s.label}</p>
+            <p className="text-2xl font-bold text-foreground mt-1">{s.value}</p>
+          </Card>
+        ))}
+      </div>
+
+      {/* Filters */}
+      <Card className="p-4 border-border/60 mb-4">
+        <div className="flex flex-wrap gap-3 items-end">
+          <div className="space-y-1">
+            <Label className="text-xs">From</Label>
+            <Input type="date" className="h-8 text-xs w-38" value={from} onChange={e => setFrom(e.target.value)} />
+          </div>
+          <div className="space-y-1">
+            <Label className="text-xs">To</Label>
+            <Input type="date" className="h-8 text-xs w-38" value={to} onChange={e => setTo(e.target.value)} />
+          </div>
+          <div className="space-y-1">
+            <Label className="text-xs">Type</Label>
+            <Select value={kindFilter} onValueChange={v => setKindFilter(v as "" | TicketKind)}>
+              <SelectTrigger className="h-8 text-xs w-36"><SelectValue placeholder="All types" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">All types</SelectItem>
+                <SelectItem value="workspace">Workspace</SelectItem>
+                <SelectItem value="course">Course</SelectItem>
+                <SelectItem value="event">Event</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1 flex-1 min-w-48">
+            <Label className="text-xs">Search</Label>
+            <Input className="h-8 text-xs" placeholder="Name, email, ticket ID…" value={search} onChange={e => setSearch(e.target.value)} />
+          </div>
+          <Button size="sm" variant="ghost" className="h-8 text-xs" onClick={() => { setFrom(""); setTo(""); setKindFilter(""); setSearch(""); }}>
+            Clear
+          </Button>
+        </div>
+      </Card>
+
+      {/* Table */}
+      <Card className="border-border/60 overflow-hidden">
+        {loading ? (
+          <div className="flex items-center justify-center py-16 text-muted-foreground">
+            <Loader2 className="h-5 w-5 animate-spin mr-2" />Loading tickets…
+          </div>
+        ) : displayed.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-16 text-muted-foreground gap-2">
+            <Ticket className="h-8 w-8 opacity-30" />
+            <p className="text-sm">No tickets found</p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b bg-muted/40">
+                  {["Ticket ID","Type","Name","Email","Amount","Status","Date",""].map(h => (
+                    <th key={h} className="px-4 py-3 text-left text-xs font-medium text-muted-foreground whitespace-nowrap">{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {displayed.map(t => (
+                  <React.Fragment key={t.id}>
+                    <tr
+                      className="border-b last:border-0 hover:bg-muted/30 cursor-pointer transition-colors"
+                      onClick={() => setExpanded(expanded === t.id ? null : t.id)}
+                    >
+                      <td className="px-4 py-3 font-mono text-xs text-muted-foreground whitespace-nowrap">{t.ticketId}</td>
+                      <td className="px-4 py-3">
+                        <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${KIND_BADGE[t.kind]}`}>
+                          {KIND_LABEL[t.kind]}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 font-medium whitespace-nowrap">{t.name}</td>
+                      <td className="px-4 py-3 text-muted-foreground text-xs">{t.email}</td>
+                      <td className="px-4 py-3 whitespace-nowrap">
+                        {t.amount === 0 ? <span className="text-muted-foreground text-xs">Free</span> : `₦${t.amount.toLocaleString("en-NG")}`}
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${t.status === "confirmed" ? "bg-green-100 text-green-800" : "bg-yellow-100 text-yellow-800"}`}>
+                          {t.status}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">{t.createdAt.slice(0,10)}</td>
+                      <td className="px-4 py-3 text-muted-foreground">
+                        <ChevronRight className={`h-4 w-4 transition-transform ${expanded === t.id ? "rotate-90" : ""}`} />
+                      </td>
+                    </tr>
+                    {expanded === t.id && (
+                      <tr className="bg-muted/20 border-b">
+                        <td colSpan={8} className="px-6 py-4">
+                          <div className="grid grid-cols-2 gap-x-8 gap-y-2 text-xs">
+                            <div><span className="text-muted-foreground">Phone: </span>{t.phone}</div>
+                            <div><span className="text-muted-foreground">Detail: </span>{t.detail}</div>
+                            <div><span className="text-muted-foreground">Ref ID: </span><span className="font-mono">{t.refId}</span></div>
+                            <div><span className="text-muted-foreground">Created: </span>{new Date(t.createdAt).toLocaleString()}</div>
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                  </React.Fragment>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </Card>
     </SectionShell>
   );
 }

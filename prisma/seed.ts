@@ -216,7 +216,7 @@ async function main() {
       await db.workspace.create({ data: ws });
     }
   }
-
+// --
   // --- Upcoming programs (shown on home page) ---
   const upcomingPrograms = [
     {

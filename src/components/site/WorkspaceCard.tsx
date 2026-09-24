@@ -1,7 +1,7 @@
 "use client";
 
 import {
-  Armchair, LampDesk, Sofa, Tv, Projector, Presentation, Eye, type LucideIcon,
+  Armchair, LampDesk, Sofa, Tv, Projector, Presentation, Eye, Users, type LucideIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -56,6 +56,12 @@ export function WorkspaceCard({
         {!workspace.bookingEnabled && (
           <div className="absolute right-3 top-3 rounded-full bg-black/60 px-2.5 py-1 text-xs font-medium text-white backdrop-blur-sm">
             Coming Soon
+          </div>
+        )}
+        {workspace.slotEnabled && workspace.bookingEnabled && (
+          <div className="absolute left-3 top-3 flex items-center gap-1 rounded-full bg-primary/80 px-2.5 py-1 text-xs font-medium text-white backdrop-blur-sm">
+            <Users className="h-3 w-3" />
+            Co-working · {workspace.totalSlots ?? 24} slots
           </div>
         )}
       </div>

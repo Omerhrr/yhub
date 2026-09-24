@@ -5,7 +5,7 @@ import {
   Loader2, Save, Plus, Trash2, Pencil, X, LayoutDashboard,
   Image, Activity, Building2, BookOpen, CalendarDays, Settings,
   LogOut, ChevronRight, Wifi, Zap, Thermometer, BriefcaseBusiness,
-  Users, TrendingUp, Menu, Bell, Ticket, Filter, Download,
+  Users, TrendingUp, Menu, Bell, Ticket, Filter, Download, Gift,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -40,7 +40,7 @@ function adminHeaders(): HeadersInit {
 
 
 /* ─── Types ─── */
-type Tab = "overview" | "hero" | "status" | "workspaces" | "courses" | "events" | "about" | "footer" | "tickets";
+type Tab = "overview" | "hero" | "status" | "workspaces" | "courses" | "events" | "about" | "footer" | "tickets" | "free-days";
 
 type NavItem = { id: Tab; label: string; icon: React.ElementType; badge?: number };
 
@@ -52,6 +52,7 @@ const NAV_ITEMS: NavItem[] = [
   { id: "courses",    label: "Courses",       icon: BookOpen },
   { id: "events",     label: "Events",        icon: CalendarDays },
   { id: "tickets",    label: "Tickets",       icon: Ticket },
+  { id: "free-days",  label: "Free Days",     icon: Gift },
   { id: "about",      label: "About Page",    icon: Users },
   { id: "footer",     label: "Footer",        icon: Settings },
 ];
@@ -171,6 +172,7 @@ export function AdminDashboard() {
             {tab === "about"      && <AboutEditor />}
             {tab === "footer"     && <FooterEditor />}
             {tab === "tickets"    && <TicketsViewer />}
+            {tab === "free-days"  && <FreeDaysEditor />}
           </div>
         </main>
       </div>
@@ -560,6 +562,7 @@ function WorkspacesEditor() {
 type WorkspaceFormInitial = {
   name: string; description: string; rating: number; reviewCount: number;
   hourlyRate: number; dailyRate: number; imageUrl: string; bookingEnabled: boolean;
+  slotEnabled: boolean; totalSlots: number;
   amenities: { icon: string; label: string }[]; order: number;
 };
 
@@ -572,7 +575,7 @@ type AvailFormState = {
 
 function WorkspaceForm({ id, initial, onClose, onSaved }: { id?: string; initial?: WorkspaceFormInitial; onClose: () => void; onSaved: () => void }) {
   const [form, setForm] = useState<WorkspaceFormInitial>(initial ?? {
-    name: "", description: "", rating: 4.5, reviewCount: 0, hourlyRate: 0, dailyRate: 0, imageUrl: "", bookingEnabled: true, amenities: [], order: 0,
+    name: "", description: "", rating: 4.5, reviewCount: 0, hourlyRate: 0, dailyRate: 0, imageUrl: "", bookingEnabled: true, slotEnabled: false, totalSlots: 24, amenities: [], order: 0,
   });
   const [avail, setAvail] = useState<AvailFormState>({
     availableDays: [1, 2, 3, 4, 5], openTime: "09:00", closeTime: "20:00", slotDuration: 60, blackoutDates: "",
@@ -638,9 +641,21 @@ function WorkspaceForm({ id, initial, onClose, onSaved }: { id?: string; initial
         <Field label="Rating"><Input type="number" step="0.1" value={form.rating} onChange={(e) => setForm({ ...form, rating: Number(e.target.value) })} /></Field>
         <Field label="Reviews"><Input type="number" value={form.reviewCount} onChange={(e) => setForm({ ...form, reviewCount: Number(e.target.value) })} /></Field>
       </div>
-      <div className="flex items-center gap-2">
-        <Checkbox id="ws-booking" checked={form.bookingEnabled} onCheckedChange={(v) => setForm({ ...form, bookingEnabled: v === true })} />
-        <label htmlFor="ws-booking" className="text-sm font-medium">Booking enabled</label>
+      <div className="flex flex-wrap gap-6 items-center">
+        <div className="flex items-center gap-2">
+          <Checkbox id="ws-booking" checked={form.bookingEnabled} onCheckedChange={(v) => setForm({ ...form, bookingEnabled: v === true })} />
+          <label htmlFor="ws-booking" className="text-sm font-medium">Booking enabled</label>
+        </div>
+        <div className="flex items-center gap-2">
+          <Checkbox id="ws-slot" checked={form.slotEnabled} onCheckedChange={(v) => setForm({ ...form, slotEnabled: v === true })} />
+          <label htmlFor="ws-slot" className="text-sm font-medium">Slot-based (co-working)</label>
+        </div>
+        {form.slotEnabled && (
+          <div className="flex items-center gap-2">
+            <label className="text-sm font-medium text-muted-foreground">Total slots:</label>
+            <Input type="number" min={1} max={500} className="h-8 w-24 text-sm" value={form.totalSlots} onChange={(e) => setForm({ ...form, totalSlots: Number(e.target.value) })} />
+          </div>
+        )}
       </div>
       <div>
         <div className="mb-2 flex items-center justify-between">
@@ -1714,6 +1729,162 @@ function TicketsViewer() {
           </div>
         )}
       </Card>
+    </SectionShell>
+  );
+}
+
+/* ─── FreeDaysEditor ──────────────────────────────────────────────────────── */
+type FreeDay = { date: string; label: string };
+
+function FreeDaysEditor() {
+  const [days, setDays]         = useState<FreeDay[]>([]);
+  const [loading, setLoading]   = useState(true);
+  const [saving, setSaving]     = useState(false);
+  const [toast, setToast]       = useState<string | null>(null);
+  const [newDate, setNewDate]   = useState("");
+  const [newLabel, setNewLabel] = useState("");
+
+  const token = typeof window !== "undefined" ? sessionStorage.getItem("admin_token") : null;
+  const headers = { "Content-Type": "application/json", Authorization: `Bearer ${token}` };
+
+  useEffect(() => {
+    fetch("/api/admin/free-days", { headers })
+      .then(r => r.json())
+      .then(data => setDays(Array.isArray(data) ? data : []))
+      .catch(() => setDays([]))
+      .finally(() => setLoading(false));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const save = async (updated: FreeDay[]) => {
+    setSaving(true);
+    try {
+      const r = await fetch("/api/admin/free-days", { method: "PUT", headers, body: JSON.stringify(updated) });
+      if (!r.ok) throw new Error();
+      setDays(updated);
+      setToast("Saved!");
+    } catch { setToast("Save failed"); }
+    finally { setSaving(false); setTimeout(() => setToast(null), 2500); }
+  };
+
+  const addDay = () => {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(newDate)) return;
+    if (days.some(d => d.date === newDate)) { setToast("Date already added"); setTimeout(() => setToast(null), 2000); return; }
+    const updated = [...days, { date: newDate, label: newLabel.trim() }].sort((a, b) => a.date.localeCompare(b.date));
+    setNewDate(""); setNewLabel("");
+    save(updated);
+  };
+
+  const removeDay = (date: string) => save(days.filter(d => d.date !== date));
+
+  const today = new Date().toISOString().slice(0, 10);
+  const upcoming = days.filter(d => d.date >= today);
+  const past     = days.filter(d => d.date < today);
+
+  if (loading) return (
+    <SectionShell title="Free Days" subtitle="Designate dates when all bookings are free of charge">
+      <div className="flex items-center gap-2 text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" /> Loading…</div>
+    </SectionShell>
+  );
+
+  return (
+    <SectionShell title="Free Days" subtitle="On these dates, workspace bookings are automatically waived — no payment required">
+      {toast && (
+        <div className="mb-4 rounded-lg bg-primary/10 px-4 py-2 text-sm font-medium text-primary">{toast}</div>
+      )}
+
+      {/* Add new */}
+      <Card className="p-5 mb-6">
+        <h3 className="font-semibold text-sm mb-4 text-foreground">Add a Free Day</h3>
+        <div className="flex flex-col sm:flex-row gap-3">
+          <div className="flex-1">
+            <Label className="text-xs mb-1 block">Date</Label>
+            <Input
+              type="date"
+              value={newDate}
+              min={today}
+              onChange={e => setNewDate(e.target.value)}
+              className="h-9"
+            />
+          </div>
+          <div className="flex-1">
+            <Label className="text-xs mb-1 block">Label (optional)</Label>
+            <Input
+              placeholder="e.g. Independence Day, Launch Day…"
+              value={newLabel}
+              onChange={e => setNewLabel(e.target.value)}
+              onKeyDown={e => e.key === "Enter" && addDay()}
+              className="h-9"
+            />
+          </div>
+          <div className="flex items-end">
+            <Button onClick={addDay} disabled={saving || !newDate} className="h-9 gap-1.5">
+              {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Plus className="h-3.5 w-3.5" />}
+              Add
+            </Button>
+          </div>
+        </div>
+      </Card>
+
+      {/* Upcoming */}
+      <div className="mb-6">
+        <h3 className="font-semibold text-sm mb-3 text-foreground flex items-center gap-2">
+          <Gift className="h-4 w-4 text-primary" />
+          Upcoming Free Days ({upcoming.length})
+        </h3>
+        {upcoming.length === 0 ? (
+          <p className="text-sm text-muted-foreground">No upcoming free days scheduled.</p>
+        ) : (
+          <div className="space-y-2">
+            {upcoming.map(d => (
+              <div key={d.date} className="flex items-center justify-between rounded-lg border bg-card px-4 py-3">
+                <div>
+                  <span className="font-medium text-sm">{d.date}</span>
+                  {d.label && <span className="ml-3 text-xs text-muted-foreground">{d.label}</span>}
+                  {d.date === today && (
+                    <span className="ml-3 inline-flex items-center gap-1 rounded-full bg-green-100 px-2 py-0.5 text-[10px] font-semibold text-green-700 dark:bg-green-900/40 dark:text-green-400">
+                      TODAY
+                    </span>
+                  )}
+                </div>
+                <Button
+                  variant="ghost" size="icon"
+                  className="h-7 w-7 text-muted-foreground hover:text-destructive"
+                  onClick={() => removeDay(d.date)}
+                  disabled={saving}
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                </Button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Past */}
+      {past.length > 0 && (
+        <div>
+          <h3 className="font-semibold text-sm mb-3 text-muted-foreground">Past Free Days ({past.length})</h3>
+          <div className="space-y-1.5">
+            {past.slice().reverse().map(d => (
+              <div key={d.date} className="flex items-center justify-between rounded-lg border border-dashed px-4 py-2 opacity-60">
+                <div>
+                  <span className="text-sm">{d.date}</span>
+                  {d.label && <span className="ml-3 text-xs text-muted-foreground">{d.label}</span>}
+                </div>
+                <Button
+                  variant="ghost" size="icon"
+                  className="h-7 w-7 text-muted-foreground hover:text-destructive"
+                  onClick={() => removeDay(d.date)}
+                  disabled={saving}
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                </Button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </SectionShell>
   );
 }

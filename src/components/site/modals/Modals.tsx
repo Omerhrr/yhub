@@ -481,6 +481,16 @@ export function BookingModal() {
   const [startSlot, setStartSlot] = useState<string | null>(null);
   const [endSlot, setEndSlot] = useState<string | null>(null);
 
+  // Free day state
+  const [freeDays, setFreeDays] = useState<string[]>([]);
+  React.useEffect(() => {
+    fetch("/api/free-days")
+      .then(r => r.json())
+      .then((days: { date: string }[]) => setFreeDays(Array.isArray(days) ? days.map(d => d.date) : []))
+      .catch(() => {});
+  }, []);
+  const isSelectedDateFree = selectedDate ? freeDays.includes(selectedDate) : false;
+
   // Form state
   const [form, setForm] = useState({ name: "", phone: "", email: "", reason: "" });
   const [submitting, setSubmitting] = useState(false);
@@ -513,7 +523,7 @@ export function BookingModal() {
   // Computed booking details
   const { durationLabel, totalPrice, startTime, endTime } = (() => {
     if (bookType === "daily") return {
-      durationLabel: "1 day", totalPrice: ws?.dailyRate ?? 0,
+      durationLabel: "1 day", totalPrice: isSelectedDateFree ? 0 : (ws?.dailyRate ?? 0),
       startTime: "09:00", endTime: "20:00",
     };
     if (!startSlot || !config) return { durationLabel: "—", totalPrice: 0, startTime: "09:00", endTime: "09:00" };
@@ -521,7 +531,7 @@ export function BookingModal() {
     const count = slotsBetween(slots, startSlot, eff).length;
     return {
       durationLabel: `${count} hour${count !== 1 ? "s" : ""}`,
-      totalPrice: count * (ws?.hourlyRate ?? 0),
+      totalPrice: isSelectedDateFree ? 0 : count * (ws?.hourlyRate ?? 0),
       startTime: startSlot,
       endTime: eff,
     };
@@ -683,10 +693,20 @@ export function BookingModal() {
         {/* FORM STEP */}
         {step === "form" && (
           <div className="space-y-4">
+            {/* Free day banner */}
+            {isSelectedDateFree && (
+              <div className="rounded-lg bg-green-100 dark:bg-green-900/40 px-3 py-2.5 text-sm flex items-center gap-2">
+                <span>🎉</span>
+                <span className="font-semibold text-green-800 dark:text-green-300">Free Entry Day — No payment needed!</span>
+              </div>
+            )}
+
             {/* Summary strip */}
             <div className="rounded-lg border bg-primary/5 p-3 text-sm space-y-1">
               <div className="flex items-center justify-between">
-                <span className="font-semibold text-primary">{formatNaira(totalPrice)}</span>
+                {isSelectedDateFree
+                  ? <span className="font-semibold text-green-600 dark:text-green-400">FREE</span>
+                  : <span className="font-semibold text-primary">{formatNaira(totalPrice)}</span>}
                 <Badge variant="outline" className="text-xs">{durationLabel}</Badge>
               </div>
               <p className="text-xs text-muted-foreground">

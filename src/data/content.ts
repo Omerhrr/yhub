@@ -39,6 +39,8 @@ export type Workspace = {
   dailyRate: number;
   imageUrl: string;
   bookingEnabled: boolean;
+  slotEnabled?: boolean;
+  totalSlots?: number;
   order?: number;
 };
 
@@ -527,5 +529,5 @@ export const statusCards = [
 
 export function formatNaira(amount: number): string {
   if (amount === 0) return "Free";
-  return "₦" + amount.toLocaleString("en-NG");
+  return `₦${amount.toLocaleString("en-NG")}`;
 }

@@ -12,6 +12,8 @@ function pickWorkspace(b: Record<string, unknown>) {
   if (typeof b.hourlyRate     === "number")  data.hourlyRate     = b.hourlyRate;
   if (typeof b.dailyRate      === "number")  data.dailyRate      = b.dailyRate;
   if (typeof b.bookingEnabled === "boolean") data.bookingEnabled = b.bookingEnabled;
+  if (typeof b.slotEnabled    === "boolean") data.slotEnabled    = b.slotEnabled;
+  if (typeof b.totalSlots     === "number")  data.totalSlots     = b.totalSlots;
   if (typeof b.order          === "number")  data.order          = b.order;
   if (Array.isArray(b.amenities))            data.amenities      = JSON.stringify(b.amenities);
   return data;

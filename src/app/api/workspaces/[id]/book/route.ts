@@ -52,6 +52,18 @@ export async function POST(req: NextRequest, { params }: Params) {
     const ws = await db.workspace.findUnique({ where: { id } });
     if (!ws) return NextResponse.json({ error: "Workspace not found" }, { status: 404 });
 
+    // ── Check if booking date is a free day ──────────────────────────────
+    let isFreeDay = false;
+    try {
+      const fdRows = await db.$queryRaw<{ id: string; data: string }[]>`
+        SELECT id, data FROM about_config WHERE id = 'free-days' LIMIT 1
+      `;
+      if (fdRows.length > 0) {
+        const freeDays: { date: string }[] = JSON.parse(fdRows[0].data);
+        isFreeDay = freeDays.some(fd => fd.date === date);
+      }
+    } catch {}
+
     // ── Server-side amount calculation (never trust client) ───────────────
     let amount = 0;
     if (bookingType === "daily") {
@@ -68,16 +80,18 @@ export async function POST(req: NextRequest, { params }: Params) {
       }
     }
 
-    // ── Paystack verification (if paid) ──────────────────────────────────
-    if (amount > 0) {
+    // ── Paystack verification (skip on free day) ─────────────────────────
+    if (amount > 0 && !isFreeDay) {
       if (!paystackRef)
         return NextResponse.json({ error: "Payment reference required" }, { status: 400 });
       const verified = await verifyPaystackPayment(paystackRef, amount);
       if (!verified)
         return NextResponse.json({ error: "Payment could not be verified. Contact support." }, { status: 402 });
     }
+    // On a free day, override amount to 0
+    if (isFreeDay) amount = 0;
 
-    // ── Double-booking check ──────────────────────────────────────────────
+    // ── Slot / double-booking check ───────────────────────────────────────
     if (bookingType !== "daily" && startTime && endTime) {
       const existing = await db.workspaceBooking.findMany({
         where: { workspaceId: id, date },
@@ -86,12 +100,21 @@ export async function POST(req: NextRequest, { params }: Params) {
 
       const toMin = (t: string) => { const [h, m] = t.split(":").map(Number); return h * 60 + m; };
       const newS = toMin(startTime), newE = toMin(endTime);
-      const overlap = existing.some(b => {
+      const overlapping = existing.filter(b => {
         const bS = toMin(b.startTime), bE = toMin(b.endTime);
         return !(newE <= bS || newS >= bE);
       });
-      if (overlap)
-        return NextResponse.json({ error: "This time slot is no longer available" }, { status: 409 });
+
+      if (ws.slotEnabled) {
+        // Co-working: allow up to totalSlots concurrent bookings
+        const totalSlots = ws.totalSlots ?? 24;
+        if (overlapping.length >= totalSlots)
+          return NextResponse.json({ error: "This time slot is fully booked" }, { status: 409 });
+      } else {
+        // Private workspace: one booking per slot
+        if (overlapping.length > 0)
+          return NextResponse.json({ error: "This time slot is no longer available" }, { status: 409 });
+      }
     }
 
     await db.workspaceBooking.create({
@@ -134,7 +157,7 @@ export async function POST(req: NextRequest, { params }: Params) {
         extraRows: [
           { label: "Booking Type", value: bookingType === "daily" ? "Full Day" : "Hourly" },
           { label: "Purpose",      value: reason },
-          ...(paystackRef ? [{ label: "Payment Ref", value: paystackRef }] : []),
+          ...(isFreeDay ? [{ label: "Free Day", value: "✅ Complimentary — no charge" }] : paystackRef ? [{ label: "Payment Ref", value: paystackRef }] : []),
         ],
         siteUrl: process.env.NEXT_PUBLIC_SITE_URL ?? "https://yahyahub.ng",
       }),

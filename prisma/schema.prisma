@@ -57,6 +57,8 @@ model Workspace {
   dailyRate      Int     @default(0)
   imageUrl       String
   bookingEnabled Boolean @default(true)
+  slotEnabled    Boolean @default(false)
+  totalSlots     Int     @default(24)
   amenities      String  @default("[]")
   order          Int     @default(0)
 

@@ -126,6 +126,8 @@ async function main() {
       dailyRate: 3000,
       imageUrl: COWORKING_IMG,
       bookingEnabled: true,
+      slotEnabled: true,
+      totalSlots: 24,
       order: 1,
     },
     {

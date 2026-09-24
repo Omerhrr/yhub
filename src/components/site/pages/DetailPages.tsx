@@ -160,6 +160,37 @@ export function WorkspaceDetailPage() {
   const { workspaces: ws } = useContent();
   const workspace = ws.find((w) => w.id === selectedId);
 
+  // Free day state
+  const [isFreeDayToday, setIsFreeDayToday] = React.useState(false);
+  const todayStr = new Date().toISOString().slice(0, 10);
+  React.useEffect(() => {
+    fetch("/api/free-days")
+      .then(r => r.json())
+      .then((days: { date: string }[]) => {
+        setIsFreeDayToday(Array.isArray(days) && days.some(d => d.date === todayStr));
+      })
+      .catch(() => {});
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Slot availability state
+  const [slotDate, setSlotDate] = React.useState(todayStr);
+  const [slotInfo, setSlotInfo] = React.useState<{
+    slotEnabled: boolean; totalSlots?: number; bookedSlots?: number;
+    availableSlots?: number; fullyBooked?: boolean;
+  } | null>(null);
+  const [slotLoading, setSlotLoading] = React.useState(false);
+
+  React.useEffect(() => {
+    if (!workspace?.slotEnabled || !selectedId) return;
+    setSlotLoading(true);
+    fetch(`/api/workspaces/${selectedId}/slot-count?date=${slotDate}`)
+      .then(r => r.json())
+      .then(d => setSlotInfo(d))
+      .catch(() => {})
+      .finally(() => setSlotLoading(false));
+  }, [selectedId, slotDate, workspace?.slotEnabled]);
+
   if (!workspace) {
     return (
       <div className="container mx-auto px-4 py-20 text-center">
@@ -222,15 +253,85 @@ export function WorkspaceDetailPage() {
         {/* Booking card */}
         <div className="lg:sticky lg:top-24 self-start">
           <Card className="p-6 shadow-lg border-border/60">
+            {/* Free day banner */}
+            {isFreeDayToday && (
+              <div className="mb-4 flex items-center gap-2 rounded-lg bg-green-100 dark:bg-green-900/40 px-3 py-2.5">
+                <span className="text-lg">🎉</span>
+                <div>
+                  <p className="text-sm font-semibold text-green-800 dark:text-green-300">Free Entry Today!</p>
+                  <p className="text-xs text-green-700 dark:text-green-400">No payment required — book for free today.</p>
+                </div>
+              </div>
+            )}
+
+            {/* Slot badge */}
+            {w.slotEnabled && (
+              <div className="mb-4 flex items-center gap-2 rounded-lg bg-primary/8 px-3 py-2">
+                <Users className="h-4 w-4 text-primary shrink-0" />
+                <span className="text-sm font-medium text-primary">Co-working space · {w.totalSlots ?? 24} total slots</span>
+              </div>
+            )}
+
             <div className="space-y-1">
-              <p className="text-2xl font-extrabold text-foreground">
-                {formatNaira(w.hourlyRate)}
-                <span className="text-sm font-normal text-muted-foreground"> / hr</span>
-              </p>
-              <p className="text-sm text-muted-foreground">
-                {formatNaira(w.dailyRate)} / day
-              </p>
+              {isFreeDayToday ? (
+                <>
+                  <p className="text-2xl font-extrabold text-green-600 dark:text-green-400">FREE</p>
+                  <p className="text-sm text-muted-foreground line-through">
+                    {formatNaira(w.hourlyRate)} / hr · {formatNaira(w.dailyRate)} / day
+                  </p>
+                </>
+              ) : (
+                <>
+                  <p className="text-2xl font-extrabold text-foreground">
+                    {formatNaira(w.hourlyRate)}
+                    <span className="text-sm font-normal text-muted-foreground"> / hr</span>
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    {formatNaira(w.dailyRate)} / day
+                  </p>
+                </>
+              )}
             </div>
+
+            {/* Live slot checker */}
+            {w.slotEnabled && (
+              <>
+                <div className="my-4 h-px bg-border" />
+                <div className="space-y-2">
+                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Check slot availability</p>
+                  <input
+                    type="date"
+                    value={slotDate}
+                    min={new Date().toISOString().slice(0, 10)}
+                    onChange={e => setSlotDate(e.target.value)}
+                    className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+                  />
+                  {slotLoading ? (
+                    <div className="flex items-center justify-center py-2 text-xs text-muted-foreground">Checking…</div>
+                  ) : slotInfo?.slotEnabled ? (
+                    <div className={cn(
+                      "flex items-center justify-between rounded-lg px-3 py-2.5 text-sm font-medium",
+                      slotInfo.fullyBooked
+                        ? "bg-red-50 text-red-700"
+                        : (slotInfo.availableSlots ?? 0) <= 5
+                        ? "bg-amber-50 text-amber-700"
+                        : "bg-green-50 text-green-700"
+                    )}>
+                      <div className="flex items-center gap-2">
+                        <Users className="h-4 w-4" />
+                        {slotInfo.fullyBooked
+                          ? "Fully booked for this date"
+                          : `${slotInfo.availableSlots} of ${slotInfo.totalSlots} slots available`}
+                      </div>
+                      {!slotInfo.fullyBooked && (
+                        <div className="text-xs opacity-70">{slotInfo.bookedSlots}/{slotInfo.totalSlots}</div>
+                      )}
+                    </div>
+                  ) : null}
+                </div>
+              </>
+            )}
+
             <div className="my-4 h-px bg-border" />
             <div className="space-y-2 text-sm text-muted-foreground">
               <div className="flex items-center gap-2"><Clock className="h-4 w-4 text-secondary" /> Available 9 AM – 8 PM</div>
@@ -239,10 +340,10 @@ export function WorkspaceDetailPage() {
             <div className="mt-6 space-y-2">
               <Button
                 className="w-full rounded-xl"
-                disabled={!w.bookingEnabled}
+                disabled={!w.bookingEnabled || slotInfo?.fullyBooked === true}
                 onClick={() => openModal({ kind: "booking", workspaceId: w.id })}
               >
-                {w.bookingEnabled ? "Book This Space" : "Coming Soon"}
+                {!w.bookingEnabled ? "Coming Soon" : slotInfo?.fullyBooked ? "Fully Booked" : "Book This Space"}
               </Button>
               <Button
                 variant="outline"

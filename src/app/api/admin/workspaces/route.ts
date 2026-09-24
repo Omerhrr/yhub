@@ -12,6 +12,8 @@ function pickWorkspace(b: Record<string, unknown>) {
     hourlyRate:     typeof b.hourlyRate     === "number"  ? b.hourlyRate     : undefined,
     dailyRate:      typeof b.dailyRate      === "number"  ? b.dailyRate      : undefined,
     bookingEnabled: typeof b.bookingEnabled === "boolean" ? b.bookingEnabled : undefined,
+    slotEnabled:    typeof b.slotEnabled    === "boolean" ? b.slotEnabled    : undefined,
+    totalSlots:     typeof b.totalSlots     === "number"  ? b.totalSlots     : undefined,
     order:          typeof b.order          === "number"  ? b.order          : undefined,
     amenities: Array.isArray(b.amenities) ? JSON.stringify(b.amenities) : undefined,
   };
@@ -43,6 +45,8 @@ export async function POST(req: NextRequest) {
         rating: data.rating ?? 4.5, reviewCount: data.reviewCount ?? 0,
         hourlyRate: data.hourlyRate ?? 0, dailyRate: data.dailyRate ?? 0,
         bookingEnabled: data.bookingEnabled ?? true,
+        slotEnabled:    data.slotEnabled    ?? false,
+        totalSlots:     data.totalSlots     ?? 24,
         amenities: data.amenities ?? "[]",
         order: data.order ?? count,
       },

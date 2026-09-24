@@ -1788,7 +1788,7 @@ function FreeDaysEditor() {
   );
 
   return (
-    <SectionShell title="Free Days" description="On these dates, workspace bookings are automatically waived — no payment required">
+    <SectionShell title="Free Days" description="On these dates, workspace bookings are automatically waived, no payment required">
       {toast && (
         <div className="mb-4 rounded-lg bg-primary/10 px-4 py-2 text-sm font-medium text-primary">{toast}</div>
       )}

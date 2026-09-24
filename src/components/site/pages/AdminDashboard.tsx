@@ -1782,13 +1782,13 @@ function FreeDaysEditor() {
   const past     = days.filter(d => d.date < today);
 
   if (loading) return (
-    <SectionShell title="Free Days" subtitle="Designate dates when all bookings are free of charge">
+    <SectionShell title="Free Days" description="Designate dates when all bookings are free of charge">
       <div className="flex items-center gap-2 text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" /> Loading…</div>
     </SectionShell>
   );
 
   return (
-    <SectionShell title="Free Days" subtitle="On these dates, workspace bookings are automatically waived — no payment required">
+    <SectionShell title="Free Days" description="On these dates, workspace bookings are automatically waived — no payment required">
       {toast && (
         <div className="mb-4 rounded-lg bg-primary/10 px-4 py-2 text-sm font-medium text-primary">{toast}</div>
       )}

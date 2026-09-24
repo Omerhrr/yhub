@@ -162,7 +162,7 @@ export function YhConnectPage() {
         </h1>
         <p className="mx-auto mt-6 max-w-xl text-lg text-white/80 leading-relaxed">
           The premier platform for connecting clients with verified professionals
-          in the built environment — architects, engineers, and artisans, all in one place.
+          in the built environment: architects, engineers, and artisans, all in one place.
         </p>
         <p className="mt-4 text-sm text-white/60">
           YH Connect is live on its own dedicated platform. Visit us at{" "}

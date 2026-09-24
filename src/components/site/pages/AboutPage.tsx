@@ -35,8 +35,8 @@ const COLOR_MAP: Record<string, { icon: string; bg: string }> = {
 const DEFAULTS: AboutConfig = {
   heroTitle: "Where Ideas",
   heroHighlight: "Become Reality",
-  heroSubtitle: "Yahya Hub is more than a coworking space — it's a launchpad for talent, ideas, and community in the heart of Northern Nigeria.",
-  heroLocation: "Based in Abuja, Nigeria",
+  heroSubtitle: "Yahya Hub is more than a coworking space, it's a launchpad for talent, ideas, and community in the heart of Northern Nigeria.",
+  heroLocation: "Based in Kaduna, Nigeria",
   heroCtaPrimary: "Explore Workspaces",
   heroCtaSecondary: "Our Courses",
   stats: [
@@ -49,12 +49,12 @@ const DEFAULTS: AboutConfig = {
   missionSub: "Our mission is to be the connective tissue between talent, opportunity, and the infrastructure that lets both thrive.",
   missionTags: ["Talent Development", "Collaboration", "Access", "Innovation"],
   visionText: "We see a Northern Nigeria where ambition is not gated by access. Where a teenager can walk into a space and learn robotics, where a freelancer can rent an office of one and ship a product the same week, and where built-environment professionals can find clients without leaving their city.",
-  visionSub: "Yahya Hub is building toward that future — one program, one event, one workspace at a time.",
+  visionSub: "Yahya Hub is building toward that future, one program, one event, one workspace at a time.",
   visionTags: ["Northern Nigeria", "Empowerment", "Accessibility", "Future-Ready"],
   timeline: [
     { year: "2021", title: "The Idea", desc: "Yahya Hub was born from a simple belief: that access to great workspace and education shouldn't be a privilege." },
     { year: "2022", title: "Opening Day", desc: "We opened our first coworking space in Abuja, welcoming our first cohort of members and running our first tech bootcamp." },
-    { year: "2023", title: "YH Connect Launches", desc: "We extended our reach into the built environment with YH Connect — a vetted marketplace for built-environment professionals." },
+    { year: "2023", title: "YH Connect Launches", desc: "We extended our reach into the built environment with YH Connect, a vetted marketplace for built-environment professionals." },
     { year: "2024", title: "Growing Community", desc: "500+ active members, 50+ events hosted, and a growing roster of programs reaching talent across Northern Nigeria." },
     { year: "2025+", title: "The Future", desc: "Expanding programs, new workspace locations, and building toward a Northern Nigeria where ambition is never gated by access." },
   ],
@@ -65,7 +65,7 @@ const DEFAULTS: AboutConfig = {
     { title: "Growth", desc: "We are committed to helping every individual and organisation that walks through our doors level up.", icon: "rocket", color: "purple" },
   ],
   visitTitle: "Come Visit Us",
-  visitSubtitle: "We're located in the heart of Abuja. Come in for a tour, grab a hot desk for the day, or just say hello — the door's always open.",
+  visitSubtitle: "We're located in the heart of Kaduna. Come in for a tour, grab a hot desk for the day, or just say hello, the door's always open.",
   visitHours: "Open 9:00 AM – 8:00 PM",
   visitFeatures: [
     "High-speed Starlink internet",
@@ -73,9 +73,9 @@ const DEFAULTS: AboutConfig = {
     "Event & workshop space",
     "Collaborative open floor",
   ],
-  address: "Abuja, Nigeria",
+  address: "Kaduna, Nigeria",
   ctaTitle: "Join Our Community",
-  ctaSub: "Whether you're looking for a place to work, a skill to learn, or a network to grow with — you have a home at Yahya Hub. Become part of our story today.",
+  ctaSub: "Whether you're looking for a place to work, a skill to learn, or a network to grow with, you have a home at Yahya Hub. Become part of our story today.",
   ctaCtaPrimary: "Get Started",
   ctaCtaSecondary: "Upcoming Events",
   faqs: [],
@@ -87,7 +87,7 @@ const DEFAULTS: AboutConfig = {
 };
 
 const OFFERINGS = [
-  { icon: Building2, title: "Flexible Workspaces", desc: "Modern, fully-equipped coworking spaces designed for deep work and spontaneous collaboration — from hot desks to private offices.", cta: "Explore Spaces", view: "workspaces" as const, accent: "border-t-primary" },
+  { icon: Building2, title: "Flexible Workspaces", desc: "Modern, fully-equipped coworking spaces designed for deep work and spontaneous collaboration, from hot desks to private offices.", cta: "Explore Spaces", view: "workspaces" as const, accent: "border-t-primary" },
   { icon: BookOpen,  title: "Expert-Led Courses",  desc: "Cutting-edge tech bootcamps and workshops led by industry practitioners. Data Science, Cybersecurity, UI/UX, AI Automation, and more.", cta: "View Courses", view: "courses" as const, accent: "border-t-secondary" },
   { icon: CalendarDays, title: "Inspiring Events", desc: "A vibrant calendar of conferences, networking meetups, and workshops that connect you with leaders, investors, and peers.", cta: "See Events", view: "events" as const, accent: "border-t-amber-400" },
 ];
@@ -216,7 +216,7 @@ export function AboutPage() {
         <div className="container mx-auto max-w-6xl px-4">
           <div className="text-center mb-12">
             <h2 className="text-3xl font-bold md:text-4xl">What We Offer</h2>
-            <p className="mt-3 text-muted-foreground max-w-xl mx-auto">Three pillars, one community — everything you need to learn, work, and connect.</p>
+            <p className="mt-3 text-muted-foreground max-w-xl mx-auto">Three pillars, one community, everything you need to learn, work, and connect.</p>
           </div>
           <div className="grid gap-6 md:grid-cols-3">
             {OFFERINGS.map(({ icon: Icon, title, desc, cta, view, accent }) => (
@@ -325,7 +325,7 @@ export function AboutPage() {
                   <Zap className="h-3.5 w-3.5 text-secondary" />{cfg.visitHours}
                 </div>
                 <h3 className="text-2xl font-bold">Ready to visit?</h3>
-                <p className="mt-3 text-white/80 text-sm leading-relaxed">Drop by for a free tour of our spaces. No appointment needed — just walk in and see what Yahya Hub is all about.</p>
+                <p className="mt-3 text-white/80 text-sm leading-relaxed">Drop by for a free tour of our spaces. No appointment needed, just walk in and see what Yahya Hub is all about.</p>
                 <div className="mt-6 space-y-3">
                   {cfg.visitFeatures.map((f) => (
                     <div key={f} className="flex items-center gap-2 text-sm text-white/90">
@@ -375,7 +375,7 @@ export function AboutPage() {
 const DEFAULT_FAQS = [
   {
     q: "What is Yahya Hub?",
-    a: "Yahya Hub is a co-working space, innovation center, and community hub in Abuja, Nigeria. We provide flexible workspaces, training programs, and networking events designed to help entrepreneurs, freelancers, and professionals grow.",
+    a: "Yahya Hub is a co-working space, innovation center, and community hub in Kaduna, Nigeria. We provide flexible workspaces, training programs, and networking events designed to help entrepreneurs, freelancers, and professionals grow.",
   },
   {
     q: "How do I book a workspace?",

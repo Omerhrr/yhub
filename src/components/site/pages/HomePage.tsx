@@ -97,7 +97,7 @@ export function HomePage() {
         <div className="container mx-auto px-4">
           <SectionHeader
             title="Workspaces"
-            subtitle="Modern, fully-equipped spaces designed to inspire productivity — from hot desks to private offices."
+            subtitle="Modern, fully-equipped spaces designed to inspire productivity, from hot desks to private offices."
             action={
               <button
                 onClick={() => navigate("workspaces")}

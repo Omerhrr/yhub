@@ -62,7 +62,7 @@ export function PrivacyPage() {
         <section>
           <h2 className="text-xl font-semibold">2. Information We Collect</h2>
           <p className="mt-2 leading-relaxed text-foreground">
-            We collect information you provide directly to us — such as your name, email address, phone number, and address when you book a workspace, enroll in a program, or register for an event. We also collect usage data through cookies and similar technologies.
+            We collect information you provide directly to us, such as your name, email address, phone number, and address when you book a workspace, enroll in a program, or register for an event. We also collect usage data through cookies and similar technologies.
           </p>
         </section>
         <section>
@@ -135,7 +135,7 @@ export function TermsPage() {
 }
 
 /* ══════════════════════════════════════════
-   YH CONNECT — COMING SOON
+   YH CONNECT — NOW LIVE
 ══════════════════════════════════════════ */
 export function YhConnectPage() {
   const { navigate } = useNav();
@@ -153,8 +153,8 @@ export function YhConnectPage() {
 
         {/* Badge */}
         <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-1.5 text-sm font-medium text-white/90">
-          <span className="h-2 w-2 rounded-full bg-secondary animate-pulse" />
-          Launching Soon
+          <span className="h-2 w-2 rounded-full bg-green-400 animate-pulse" />
+          Now Live
         </div>
 
         <h1 className="text-4xl font-extrabold tracking-tight md:text-6xl">
@@ -165,11 +165,13 @@ export function YhConnectPage() {
           in the built environment — architects, engineers, and artisans, all in one place.
         </p>
         <p className="mt-4 text-sm text-white/60">
-          We're putting the finishing touches on something exciting. YH Connect
-          is launching as its own dedicated platform very soon.
+          YH Connect is live on its own dedicated platform. Visit us at{" "}
+          <a href="https://yhconnecthub.com" target="_blank" rel="noopener noreferrer" className="text-white underline underline-offset-2 hover:text-white/80">
+            yhconnecthub.com
+          </a>
         </p>
 
-        {/* Features teaser */}
+        {/* Features */}
         <div className="mt-10 grid grid-cols-1 gap-3 sm:grid-cols-3">
           {[
             { label: "Verified Professionals", desc: "Vetted architects, engineers & artisans" },
@@ -185,23 +187,23 @@ export function YhConnectPage() {
 
         {/* CTA */}
         <div className="mt-10 flex flex-wrap items-center justify-center gap-3">
+          <a
+            href="https://yhconnecthub.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 rounded-full bg-white px-8 py-2.5 text-sm font-semibold text-primary hover:bg-white/90 transition-colors"
+          >
+            Visit YH Connect
+            <ExternalLink className="h-3.5 w-3.5" />
+          </a>
           <Button
             size="lg"
-            className="bg-white text-primary hover:bg-white/90 font-semibold rounded-full px-8"
+            variant="ghost"
+            className="rounded-full px-8 text-white border border-white/40 hover:bg-white/10"
             onClick={() => navigate("home")}
           >
             Back to Yahya Hub
           </Button>
-          <a
-            href={`mailto:${SITE.email}?subject=YH Connect Early Access`}
-            className={cn(
-              "inline-flex items-center gap-2 rounded-full border border-white/40 px-8 py-2.5",
-              "text-sm font-semibold text-white hover:bg-white/10 transition-colors"
-            )}
-          >
-            Get Notified
-            <ExternalLink className="h-3.5 w-3.5" />
-          </a>
         </div>
       </div>
     </div>

@@ -64,7 +64,7 @@ export function WorkspacesPage() {
       <BackButton onClick={() => navigate("home")} label="Back to Home" />
       <PageHero
         title="Our Workspaces"
-        subtitle="Modern, fully-equipped spaces designed to inspire productivity — from hot desks to private offices."
+        subtitle="Modern, fully-equipped spaces designed to inspire productivity, from hot desks to private offices."
       />
 
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -259,7 +259,7 @@ export function WorkspaceDetailPage() {
                 <span className="text-lg">🎉</span>
                 <div>
                   <p className="text-sm font-semibold text-green-800 dark:text-green-300">Free Entry Today!</p>
-                  <p className="text-xs text-green-700 dark:text-green-400">No payment required — book for free today.</p>
+                  <p className="text-xs text-green-700 dark:text-green-400">No payment required, book for free today.</p>
                 </div>
               </div>
             )}
